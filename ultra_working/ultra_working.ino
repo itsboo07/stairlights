@@ -18,6 +18,9 @@ long dis_a = 0, dis_b = 0;
 int flag1 = 0, flag2 = 0;
 int person = 0;
 int counter = 0;
+const int sensor_sleep_mils = 2000;
+unsigned long sensor_sleep_start = 0;
+bool sensor_sleep = false;
 
 void peopleCount();
 void animate_state();
@@ -38,17 +41,26 @@ void ultra_read(int pin_t, int pin_e, long &ultra_time) {
 void setup() {
   Serial.begin(9600);// initialize serial communication at 9600 bits per second:
   Serial.println("BOO Staircase Started");
-
-
-
 }
 
 void loop() {
 
   peopleCount();
+  animate_state();
 
 }
 void peopleCount() {
+
+  ////// check for sensor sleep state and timeout condition
+  if (sensor_sleep && millis() > sensor_sleep_start + sensor_sleep_mils )
+  {
+    return;   // exit the function early thus disabling sensor reading
+  }
+  else
+  {
+    sensor_sleep = false;  // sensor sleep is over so set the bool to false and let the function continue
+  }
+
   //*************************
   ultra_read(t_s1, e_s1, dis_a); delay(30);
   ultra_read(t_s2, e_s2, dis_b); delay(30);
@@ -73,7 +85,9 @@ void peopleCount() {
 
   if (dis_a > 90 && dis_b > 90 && flag1 == 1 && flag2 == 1) {
     flag1 = 0, flag2 = 0;
-    delay(2000);
+    //delay(2000);
+    sensor_sleep = true;
+    sensor_sleep_start = millis();
   }
 
 
@@ -87,20 +101,22 @@ void peopleCount() {
   }
   if (person == 1 && dis_a < 90 && flag1 == 1 )
   {
-    for (int i = 0; i < 16; i++) {
-      sr.set(i, HIGH);
-      delay(400);
-      Serial.print("turn on lights ");
-      Serial.println(i);
+    anim_state = TOUPON;
+    // for (int i = 0; i < 16; i++) {
+    //   sr.set(i, HIGH);
+    //   delay(400);
+    //   Serial.print("turn on lights ");
+    //   Serial.println(i);
     }
   }
   if (person == 0 && dis_b < 90 && flag2 == 1)
   {
-    for (int i = 15; i >= 0; i--) {
-      sr.set(i, LOW);
-      delay(400);
-      Serial.print("turn off lights ");
-      Serial.println(i);
+    anim_state = TODOWNOFF;
+    // for (int i = 15; i >= 0; i--) {
+    //   sr.set(i, LOW);
+    //   delay(400);
+    //   Serial.print("turn off lights ");
+    //   Serial.println(i);
     }
   }
 }
