@@ -1,4 +1,4 @@
-#include <EEPROM.h>   //We need this library
+#include <EEPROM.h>   //We need this library for saving the button state
 #include <Arduino.h>  // for type definitions
 
 #include <ShiftRegister74HC595.h>
@@ -32,8 +32,6 @@ int lastsensorState1 = HIGH;
 int lastsensorState2 = HIGH;
 int lastsensorState3 = HIGH;
 int lastsensorState4 = HIGH;
-
-
 
 int buttonPushCounter = 0;   // counter for the number of button presses
 int buttonState = 0;         // current state of the button
