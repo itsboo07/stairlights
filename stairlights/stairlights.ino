@@ -10,7 +10,7 @@ ShiftRegister74HC595<2> sr(14, 16, 15);
 #define sensorPin2 7        //ir sensor 2
 #define sensorPin3 6        //ir sensor 3
 #define sensorPin4 5       //ir sensor 4
-#define buttonPin 9
+#define buttonPin 9             //button
 
 #define TOUPON 1
 #define TOUPOFF 2
