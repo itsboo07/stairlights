@@ -3,8 +3,22 @@
 
 #define D_THRESHOLD 80     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
-UltraSonicDistanceSensor sensor1(A0, A1);  //
-UltraSonicDistanceSensor sensor2(A2, A3);  //
+
+#define BOOPINS 1           // change 0 for TAVIS to change hardware pins
+#if BOOPINS == 1
+  #define e_s1 2 //echo pin
+  #define t_s1 3 //Trigger pin
+  #define e_s2 4 //echo pin
+#define t_s2 5 //Trigger pin
+#else
+  #define e_s1 A1 //echo pin
+  #define t_s1 A0 //Trigger pin
+  #define e_s2 A3 //echo pin
+#define t_s2 A2 //Trigger pin
+#endif
+
+UltraSonicDistanceSensor sensor1(t_s1, e_s1);  //
+UltraSonicDistanceSensor sensor2(t_s2, e_s2);  //
 int person_count = 0;
 const int m_count = MEASURE_COUNT ;
 
