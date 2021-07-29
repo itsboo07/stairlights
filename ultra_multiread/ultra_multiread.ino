@@ -1,7 +1,7 @@
 #include <ShiftRegister74HC595.h>
 #include <HCSR04.h>
 
-#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
+//#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
 #define BOOPINS 1           // change 0 for TAVIS to change hardware pins
@@ -25,17 +25,19 @@ const int m_count = MEASURE_COUNT ;
 // create a global shift register object
 // parameters: <number of shift registers> (data pin, clock pin, latch pin)
 ShiftRegister74HC595<2> sr(14, 16, 15);
-#define e_s1 A1 //2 //echo pin
-#define t_s1 A0 //3 //Trigger pin
+#define e_s1 2 //echo pin
+#define t_s1 3 //Trigger pin
 
-#define e_s2 A3 //4 //echo pin
-#define t_s2 A2 //5 //Trigger pin
+#define e_s2 4 //echo pin
+#define t_s2 5 //Trigger pin
 
-#define ANIM_DELAY 100  // 100 ms between each light turnon
-#define DISTANCE_THRESHOLD 60 // the distance to trigger the sensor on
+#define ANIM_DELAY 400  // 100 ms between each light turnon
+#define DISTANCE_THRESHOLD 80 // the distance to trigger the sensor on
 
 #define TOUPON 1
-#define TODOWNOFF 2
+#define TOUPOFF 2
+#define TODOWNON 3
+#define TODOWNOFF 4
 #define NONE -1
 int anim_state = NONE;
 int last_anim_state = -1;
@@ -44,7 +46,7 @@ long dis_a = 0, dis_b = 0;
 int flag1 = 0, flag2 = 0;
 int person = 0, last_person = 0;
 int counter = 0;
-const int sensor_sleep_mils = 2000;
+const int sensor_sleep_mils = 3000;
 unsigned long sensor_sleep_start = 0;
 bool sensor_sleep = false;
 unsigned long last_flag_change;
@@ -59,11 +61,11 @@ int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading
   {
     d = sensor.measureDistanceCm();   // <---- actually the second measurement
     ////////// check for mis-matched measurements 
-    if ((d > D_THRESHOLD && last_d < D_THRESHOLD) || (d < D_THRESHOLD && last_d > D_THRESHOLD) ) {return 1000;}
+    if ((d > DISTANCE_THRESHOLD && last_d < DISTANCE_THRESHOLD) || (d < DISTANCE_THRESHOLD && last_d > DISTANCE_THRESHOLD) ) {return 1000;}
     delay(10);
     last_d = d;
   }
-  if (last_d < D_THRESHOLD ) 
+  if (last_d < DISTANCE_THRESHOLD ) 
   { 
 
     return last_d;   // if we get here then got consecutive readings below threshold
@@ -156,24 +158,12 @@ void peopleCount() {
     if (person == 1 && last_person == 0 )
     {
     Serial.println("TOUPON");
-    anim_state = TOUPON;
-    // for (int i = 0; i < 16; i++) {
-    //   sr.set(i, HIGH);
-    //   delay(400);
-    //   Serial.print("turn on lights ");
-    //   Serial.println(i);
-    //}
+    anim_state = TODOWNON;
     }
     if (person == 0 && last_person == 1)
     {
       Serial.println("TODOWNOFF");
-      anim_state = TODOWNOFF;
-      // for (int i = 15; i >= 0; i--) {
-      //   sr.set(i, LOW);
-      //   delay(400);
-      //   Serial.print("turn off lights ");
-      //   Serial.println(i);
-      //}
+      anim_state = TOUPOFF;
     }
     last_person = person;
   }
@@ -205,7 +195,48 @@ void animate_state() {
 
   }
 
+  if (anim_state == TOUPOFF) {
+    //last_millis = millis();
+    if (anim_state != last_anim_state) { // state just changed, lets set the counter to 0
+      counter = 0;
+      sr.set(counter, LOW);
+      Serial.println("starting toupOff ");
+      last_millis = millis();
+    } else if ( millis() > last_millis + ANIM_DELAY ) {   // continue the animation if the time interval is up
+      counter++;
+      sr.set(counter, LOW);
+      //Serial.print(" lights off ");
+      //Serial.println(counter);
+      last_millis = millis();
+    }
+    if ( counter >= 15 ) 
+    {
+      anim_state = NONE;
+      Serial.println("stopped toupon");
+    }
 
+  }
+    if (anim_state == TODOWNON) {
+    //last_millis = millis();
+    if (anim_state != last_anim_state) { // state just changed, lets set the counter to 0
+      counter = 15;
+      sr.set(counter, HIGH);
+      Serial.println("starting todownon ");
+      last_millis = millis();
+    } else if ( millis() > last_millis + ANIM_DELAY ) {   // continue the animation if the time interval is up
+      counter--;
+      sr.set(counter, HIGH);
+      //Serial.print(" lights on ");
+      //Serial.println(counter);
+      last_millis = millis();
+    }
+    if ( counter == 0 ) 
+    {
+      anim_state = NONE;
+      Serial.println("stopped toupon");
+    }
+
+  }
 
 
   if (anim_state == TODOWNOFF) {
