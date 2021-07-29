@@ -50,8 +50,7 @@ const int sensor_sleep_mils = 3000;
 unsigned long sensor_sleep_start = 0;
 bool sensor_sleep = false;
 unsigned long last_flag_change;
-void peopleCount();
-void animate_state();
+
 
 int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading to eliminate spurious triggers
   long d = 0;
@@ -75,6 +74,9 @@ int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading
   }
 }
 
+
+void peopleCount();
+void animate_state();
 
 void setup() {
   Serial.begin(9600);// initialize serial communication at 9600 bits per second:
@@ -136,7 +138,7 @@ void peopleCount() {
       //sensor_sleep_start = millis();
     }
   }
-                                        // reset the flags after both have been triggered and also use a timeout in case the second sensor missed
+ // <------reset the flags after both have been triggered and also use a timeout in case the second sensor missed
   if (dis_a > DISTANCE_THRESHOLD && dis_b > DISTANCE_THRESHOLD && ((flag1 == 1 || flag2 == 1))) 
   {
       if ((flag1 == 1 && flag2 == 1) || millis() > last_flag_change+2000 ) 
