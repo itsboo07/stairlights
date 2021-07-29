@@ -4,7 +4,7 @@
 #define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-#define BOOPINS 0           // change 0 for TAVIS to change hardware pins
+#define BOOPINS 1           // change 0 for TAVIS to change hardware pins
 #if BOOPINS == 1
   #define e_s1 2 //echo pin
   #define t_s1 3 //Trigger pin
