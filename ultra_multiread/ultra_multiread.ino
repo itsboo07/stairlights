@@ -1,10 +1,10 @@
 #include <ShiftRegister74HC595.h>
 #include <HCSR04.h>
 
-#define D_THRESHOLD 80     // the minimum maximum distance to indicate a trigger
+#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-#define BOOPINS 1           // change 0 for TAVIS to change hardware pins
+#define BOOPINS 0           // change 0 for TAVIS to change hardware pins
 #if BOOPINS == 1
   #define e_s1 2 //echo pin
   #define t_s1 3 //Trigger pin
@@ -108,9 +108,9 @@ void peopleCount() {
   // ultra_read(t_s2, e_s2, dis_b); delay(30);
   // //*************************
   dis_a = read_sensor(sensor1);
-  if (dis_a < DISTANCE_THRESHOLD ) Serial.println("s1 triggered");
+  if (dis_a < DISTANCE_THRESHOLD ) {Serial.print("s1 triggered: ");Serial.println(dis_a);}
   dis_b = read_sensor(sensor2);
-  if (dis_b < DISTANCE_THRESHOLD ) Serial.println("s2 triggered");
+  if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("s2 triggered: ");Serial.println(dis_b);}
 
   //Serial.print("da:"); Serial.println(dis_a);
   //Serial.print("db:"); Serial.println(dis_b);
