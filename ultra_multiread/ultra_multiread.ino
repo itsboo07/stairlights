@@ -214,7 +214,7 @@ void animate_state() {
     if ( counter >= 15 ) 
     {
       anim_state = NONE;
-      Serial.println("stopped toupon");
+      Serial.println("stopped toupoff");
     }
 
   }
@@ -235,7 +235,7 @@ void animate_state() {
     if ( counter == 0 ) 
     {
       anim_state = NONE;
-      Serial.println("stopped toupon");
+      Serial.println("stopped todownon");
     }
 
   }
