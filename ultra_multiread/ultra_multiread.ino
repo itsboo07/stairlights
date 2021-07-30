@@ -44,6 +44,7 @@ int counter = 0;
 const int sensor_sleep_mils = 3000;
 unsigned long sensor_sleep_start = 0;
 bool sensor_sleep = false;
+bool last_sleep = false;
 unsigned long last_flag_change;
 
 
@@ -94,10 +95,18 @@ void peopleCount() {
   ////// check for sensor sleep state and timeout condition
   if (sensor_sleep && millis() < sensor_sleep_start + sensor_sleep_mils )
   {
+    if (sensor_sleep != last_sleep) {
+      Serial.println("sleep start");
+      last_sleep = sensor_sleep;
+    }
     return;   // exit the function early thus disabling sensor reading
   }
   else
   {
+    if (sensor_sleep != last_sleep) {
+      Serial.println("sleep end");
+      last_sleep = sensor_sleep;
+    }
     sensor_sleep = false;  // sensor sleep is over so set the bool to false and let the function continue
   }
 
