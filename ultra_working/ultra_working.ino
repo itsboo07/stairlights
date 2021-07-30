@@ -14,11 +14,12 @@ ShiftRegister74HC595<2> sr(14, 16, 15);
 int anim_state = NONE;
 int last_anim_state = -1;
 unsigned long last_millis = 0;
+
 long dis_a = 0, dis_b = 0;
 int flag1 = 0, flag2 = 0;
 int person = 0;
 int counter = 0;
-const int sensor_sleep_mils = 2000;
+const int sensor_sleep_mils = 5000;
 unsigned long sensor_sleep_start = 0;
 bool sensor_sleep = false;
 
@@ -108,7 +109,7 @@ void peopleCount() {
     //   Serial.print("turn on lights ");
     //   Serial.println(i);
     }
-  }
+  
   if (person == 0 && dis_b < 90 && flag2 == 1)
   {
     anim_state = TODOWNOFF;
@@ -119,7 +120,7 @@ void peopleCount() {
     //   Serial.println(i);
     }
   }
-}
+
 
 void animate_state() {
 
