@@ -1,5 +1,5 @@
 #include <ShiftRegister74HC595.h>
-#include <HCSR04.h>
+#include "HCSR04_Custom.h"
 
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
