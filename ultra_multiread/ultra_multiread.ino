@@ -25,11 +25,6 @@ const int m_count = MEASURE_COUNT ;
 // create a global shift register object
 // parameters: <number of shift registers> (data pin, clock pin, latch pin)
 ShiftRegister74HC595<2> sr(14, 16, 15);
-#define e_s1 2 //echo pin
-#define t_s1 3 //Trigger pin
-
-#define e_s2 4 //echo pin
-#define t_s2 5 //Trigger pin
 
 #define ANIM_DELAY 400  // 100 ms between each light turnon
 #define DISTANCE_THRESHOLD 80 // the distance to trigger the sensor on
@@ -42,7 +37,7 @@ ShiftRegister74HC595<2> sr(14, 16, 15);
 int anim_state = NONE;
 int last_anim_state = -1;
 unsigned long last_millis = 0;
-long dis_a = 0, dis_b = 0;
+long dis_a = 1000, dis_b = 1000;
 int flag1 = 0, flag2 = 0;
 int person = 0, last_person = 0;
 int counter = 0;
@@ -64,13 +59,12 @@ int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading
     delay(10);
     last_d = d;
   }
-  if (last_d < DISTANCE_THRESHOLD ) 
+  if (last_d < DISTANCE_THRESHOLD && last_d != -1 ) 
   { 
-
     return last_d;   // if we get here then got consecutive readings below threshold
   }
   else {
-    return last_d;
+    return 1000;
   }
 }
 
@@ -112,13 +106,19 @@ void peopleCount() {
   // ultra_read(t_s2, e_s2, dis_b); delay(30);
   // //*************************
   dis_a = read_sensor(sensor1);
-  if (dis_a < DISTANCE_THRESHOLD ) {Serial.print("s1 triggered: ");Serial.println(dis_a);}
-  dis_b = read_sensor(sensor2);
-  if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("s2 triggered: ");Serial.println(dis_b);}
+  if (dis_a < DISTANCE_THRESHOLD ) {
+    //Serial.print("s1 triggered: ");Serial.println(dis_a);
+    //Serial.print("flag1 : "); Serial.println(flag1);
+    //Serial.print("flag2 : "); Serial.println(flag2);
+  }
 
+  if (person > 0 || dis_b < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
+    dis_b = read_sensor(sensor2);
+    //if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("s2 triggered: ");Serial.println(dis_b);}
+  }
   //Serial.print("da:"); Serial.println(dis_a);
   //Serial.print("db:"); Serial.println(dis_b);
-
+  
   if (dis_a < DISTANCE_THRESHOLD && flag1 == 0) {
     flag1 = 1;
     last_flag_change = millis();
