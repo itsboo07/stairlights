@@ -41,12 +41,12 @@ long dis_a = 1000, dis_b = 1000;
 int flag1 = 0, flag2 = 0;
 int person = 0, last_person = 0;
 int counter = 0;
-const int sensor_sleep_mils = 3000;
+const int sensor_sleep_mils = 1000;
 unsigned long sensor_sleep_start = 0;
 bool sensor_sleep = false;
 bool last_sleep = false;
 unsigned long last_flag_change;
-
+unsigned long last_active = 0;
 
 int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading to eliminate spurious triggers
   long d = 0;
@@ -133,6 +133,7 @@ void peopleCount() {
     last_flag_change = millis();
     if (flag2 == 0) {
       person = person + 1;
+      last_active = millis();
       //sensor_sleep = true;
       //sensor_sleep_start = millis();
     }
@@ -168,17 +169,22 @@ void peopleCount() {
     
     if (person == 1 && last_person == 0 )
     {
-    Serial.println("TOUPON");
+    Serial.println("TODOWNON");
     anim_state = TODOWNON;
     }
     if (person == 0 && last_person == 1)
     {
-      Serial.println("TODOWNOFF");
+      Serial.println("TOUPOFF");
       anim_state = TOUPOFF;
     }
     last_person = person;
   }
-
+  if (person>0 && (millis()> 15000 + last_active)){
+    person=0;
+    sr.setAllLow();
+    
+    
+  }
 
 }
 
