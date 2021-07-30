@@ -28,12 +28,12 @@ double UltraSonicDistanceSensor::measureDistanceCm(float temperature) {
     delayMicroseconds(10);
     digitalWrite(triggerPin, LOW);
     // Measure the length of echo signal, which is equal to the time needed for sound to go there and back.
-    unsigned long durationMicroSec = pulseIn(echoPin, HIGH,10000);
+    unsigned long durationMicroSec = pulseIn(echoPin, HIGH,10000);  // <---- ad 10000 usec timeout (10ms)
 
     double speedOfSoundInCmPerMs = 0.03313 + 0.0000606 * temperature; // Cair ≈ (331.3 + 0.606 ⋅ ϑ) m/s
     double distanceCm = durationMicroSec / 2.0 * speedOfSoundInCmPerMs;
     if (distanceCm == 0 || distanceCm > 400) {
-        return -1.0 ;
+        return 1000 ;
     } else {
         return distanceCm;
     }
