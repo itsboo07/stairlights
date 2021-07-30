@@ -1,10 +1,10 @@
 #include <ShiftRegister74HC595.h>
-#include <HCSR04.h>
+#include "HCSR04_Custom.h"
 
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-#define BOOPINS 1           // change 0 for TAVIS to change hardware pins
+#define BOOPINS 0           // change 0 for TAVIS to change hardware pins
 #if BOOPINS == 1
   #define e_s1 2 //echo pin
   #define t_s1 3 //Trigger pin
@@ -41,10 +41,11 @@ long dis_a = 1000, dis_b = 1000;
 int flag1 = 0, flag2 = 0;
 int person = 0, last_person = 0;
 int counter = 0;
-const int sensor_sleep_mils = 3000;
+const int sensor_sleep_mils = 2000;
 unsigned long sensor_sleep_start = 0;
-bool sensor_sleep = false;
-bool last_sleep = false;
+bool sensor_sleep = false, last_sleep = false;
+bool a_sleep = false, b_sleep = false;
+long a_sleep_start = false, b_sleep_start = false;
 unsigned long last_flag_change;
 
 
@@ -93,40 +94,56 @@ void loop() {
 void peopleCount() {
 
   ////// check for sensor sleep state and timeout condition
-  if (sensor_sleep && millis() < sensor_sleep_start + sensor_sleep_mils )
-  {
-    if (sensor_sleep != last_sleep) {
-      Serial.println("sleep start");
-      last_sleep = sensor_sleep;
+  // if (sensor_sleep && millis() < sensor_sleep_start + sensor_sleep_mils )
+  // {
+  //   if (sensor_sleep != last_sleep) {
+  //     Serial.println("sleep start");
+  //     last_sleep = sensor_sleep;
+  //   }
+  //   return;   // exit the function early thus disabling sensor reading
+  // }
+  // else
+  // {
+  //   if (sensor_sleep != last_sleep) {
+  //     Serial.println("sleep end");
+  //     last_sleep = sensor_sleep;
+  //   }
+  //   sensor_sleep = false;  // sensor sleep is over so set the bool to false and let the function continue
+  // }
+  if (a_sleep) {
+    if (millis() < a_sleep_start + sensor_sleep_mils ) {
+      dis_a = 1000; // still sleeping, just set dis_b to something greaer than threshold
+    } else {
+      a_sleep = false;  // set sleep to false;
     }
-    return;   // exit the function early thus disabling sensor reading
   }
   else
   {
-    if (sensor_sleep != last_sleep) {
-      Serial.println("sleep end");
-      last_sleep = sensor_sleep;
+    dis_a = read_sensor(sensor1);
+    if (dis_a < DISTANCE_THRESHOLD ) {
+      a_sleep = true;
+      a_sleep_start = millis();
     }
-    sensor_sleep = false;  // sensor sleep is over so set the bool to false and let the function continue
   }
-
-  //*************************
-  // ultra_read(t_s1, e_s1, dis_a); delay(30);
-  // ultra_read(t_s2, e_s2, dis_b); delay(30);
-  // //*************************
-  dis_a = read_sensor(sensor1);
-  if (dis_a < DISTANCE_THRESHOLD ) {
-    //Serial.print("s1 triggered: ");Serial.println(dis_a);
-    //Serial.print("flag1 : "); Serial.println(flag1);
-    //Serial.print("flag2 : "); Serial.println(flag2);
+  if (b_sleep) {
+    if (millis() < b_sleep_start + sensor_sleep_mils ) {
+      dis_b = 1000;   // still sleeping, just set dis_b to something greaer than threshold
+    } else {
+      b_sleep = false;  // set sleep to false;
+    }
   }
-
-  if (person > 0 || dis_b < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
-    dis_b = read_sensor(sensor2);
-    //if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("s2 triggered: ");Serial.println(dis_b);}
+  else
+  {
+    if (person > 0 || dis_b < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
+      dis_b = read_sensor(sensor2);
+      if (dis_b < DISTANCE_THRESHOLD ) 
+      {
+        b_sleep = true;
+        b_sleep_start = millis();
+        //Serial.print("s2 triggered: ");Serial.println(dis_b);
+      }
+    }
   }
-  //Serial.print("da:"); Serial.println(dis_a);
-  //Serial.print("db:"); Serial.println(dis_b);
   
   if (dis_a < DISTANCE_THRESHOLD && flag1 == 0) {
     flag1 = 1;
@@ -178,6 +195,9 @@ void peopleCount() {
     }
     last_person = person;
   }
+
+  dis_a = 1000;
+  dis_b = 1000;
 
 
 }
