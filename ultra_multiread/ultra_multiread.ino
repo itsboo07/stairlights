@@ -1,6 +1,8 @@
+#include <EEPROM.h>   //We need this library
+#include <Arduino.h>  // for type definitions
+
 #include <ShiftRegister74HC595.h>
 #include "HCSR04_Custom.h"
-#include <EEPROM.h>   //We need this library
 
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
@@ -11,7 +13,7 @@
 #define t_sA 3 //Trigger pin
 #define e_sB 4 //echo pin
 #define t_sB 5 //Trigger pin
-// upper group 
+// upper group
 #define e_sC 6 //echo pin
 #define t_sC 7 //Trigger pin
 #define e_sD 8 //echo pin
@@ -53,7 +55,7 @@ int last_active_group = LOWER;
 ////////////////////////////////////////// Lower floor sensor group
 long dis_a = 1000, dis_b = 1000;        // distance return in cm for each sensor of lower group
 int flag_a = 0, flag_b = 0;             // flags for lower sensors
-unsigned long l_sensor_sleep_start = 0; // the time the sensor_pair started sleeping 
+unsigned long l_sensor_sleep_start = 0; // the time the sensor_pair started sleeping
 bool l_sensor_sleep = false;            // boolean to indicated that a sensor pair is sleeping
 bool l_last_sleep = false;              // boolean to detect a change in sleep status
 unsigned long l_last_flag_change;       // the time when a flag was last changed in lower group
@@ -61,7 +63,7 @@ unsigned long l_last_flag_change;       // the time when a flag was last changed
 ////////////////////////////////////////// Upper floor sensor group
 long dis_c = 1000, dis_d = 1000;        // distance return in cm for each sensor of upper group
 int flag_c = 0, flag_d = 0;             // flags for upper sensors
-unsigned long u_sensor_sleep_start = 0; // the time the sensor_pair started sleeping 
+unsigned long u_sensor_sleep_start = 0; // the time the sensor_pair started sleeping
 bool u_sensor_sleep = false;            // boolean to indicated that a sensor pair is sleeping
 bool u_last_sleep = false;              // boolean to detect a change in sleep status
 unsigned long u_last_flag_change;       // the time when a flag was last changed in upper group
@@ -79,15 +81,17 @@ int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading
   long d = 0;
   long last_d = sensor.measureDistanceCm();
   delay(10);
-  for (int i = 0 ; i < m_count ; i++ ) 
+  for (int i = 0 ; i < m_count ; i++ )
   {
     d = sensor.measureDistanceCm();   // <---- actually the second measurement
-    ////////// check for mis-matched measurements 
-    if ((d > DISTANCE_THRESHOLD && last_d < DISTANCE_THRESHOLD) || (d < DISTANCE_THRESHOLD && last_d > DISTANCE_THRESHOLD) ) {return 1000;}
+    ////////// check for mis-matched measurements
+    if ((d > DISTANCE_THRESHOLD && last_d < DISTANCE_THRESHOLD) || (d < DISTANCE_THRESHOLD && last_d > DISTANCE_THRESHOLD) ) {
+      return 1000;
+    }
     delay(10);
     last_d = d;
   }
-  
+
   return last_d;
 }
 
@@ -99,6 +103,8 @@ void animate_state();
 
 void setup() {
   Serial.begin(9600);// initialize serial communication at 9600 bits per second:
+  Serial.println("BOO Staircase Started");
+  
   pinMode(t_sA, OUTPUT);
   pinMode(e_sA, INPUT);
   pinMode(t_sB, OUTPUT);
@@ -107,9 +113,11 @@ void setup() {
   pinMode(e_sC, INPUT);
   pinMode(t_sD, OUTPUT);
   pinMode(e_sD, INPUT);
+  pinMode (buttonPin, INPUT);
+  buttonPushCounter = EEPROM.read(0);
+  Serial.print(EEPROM.read(0));
 
 
-  Serial.println("BOO Staircase Started");
 }
 
 void loop() {
@@ -118,7 +126,7 @@ void loop() {
   if (sensor_control) {
     people_count_lower();
     people_count_upper();
-    
+
   }
   animate_state();
 
@@ -130,7 +138,7 @@ void people_count_lower() {       // function to detect people count at lower se
   ////// check for sensor sleep state and timeout condition
   if (l_sensor_sleep && millis() < l_sensor_sleep_start + sensor_sleep_mils )
   {
-    if (l_sensor_sleep!= l_last_sleep) {
+    if (l_sensor_sleep != l_last_sleep) {
       Serial.println("lower sleep start");
       l_last_sleep = l_sensor_sleep;
     }
@@ -138,27 +146,30 @@ void people_count_lower() {       // function to detect people count at lower se
   }
   else
   {
-    if (l_sensor_sleep!= l_last_sleep) {
+    if (l_sensor_sleep != l_last_sleep) {
       Serial.println("lower sleep end");
       l_last_sleep = l_sensor_sleep;
     }
-    l_sensor_sleep= false;  // sensor sleep is over so set the bool to false and let the function continue
+    l_sensor_sleep = false; // sensor sleep is over so set the bool to false and let the function continue
   }
 
   dis_a = read_sensor(sensor_a);      // read sensor a
   if (dis_a < DISTANCE_THRESHOLD ) {
-    Serial.print("sA triggered: ");Serial.println(dis_a);
+    Serial.print("sA triggered: "); Serial.println(dis_a);
     //Serial.print("flag_a : "); Serial.println(flag_a);
     //Serial.print("flag_b : "); Serial.println(flag_b);
   }
 
   if (person > 0 || dis_b < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
     dis_b = read_sensor(sensor_b);
-    if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("sB triggered: ");Serial.println(dis_b);}
+    if (dis_b < DISTANCE_THRESHOLD ) {
+      Serial.print("sB triggered: ");
+      Serial.println(dis_b);
+    }
   }
   //Serial.print("da:"); Serial.println(dis_a);
   //Serial.print("db:"); Serial.println(dis_b);
-  
+
   if (dis_a < DISTANCE_THRESHOLD && flag_a == 0) {
     flag_a = 1;
     l_last_flag_change = millis();
@@ -183,14 +194,14 @@ void people_count_lower() {       // function to detect people count at lower se
       //l_sensor_sleep_start = millis();
     }
   }
- // <------reset the flags after both have been triggered and also use a timeout in case the second sensor missed
-  if (dis_a > DISTANCE_THRESHOLD && dis_b > DISTANCE_THRESHOLD && ((flag_a == 1 || flag_b == 1))) 
+  // <------reset the flags after both have been triggered and also use a timeout in case the second sensor missed
+  if (dis_a > DISTANCE_THRESHOLD && dis_b > DISTANCE_THRESHOLD && ((flag_a == 1 || flag_b == 1)))
   {
-      if ((flag_a == 1 && flag_b == 1) || millis() > l_last_flag_change+2000 ) 
-      {
+    if ((flag_a == 1 && flag_b == 1) || millis() > l_last_flag_change + 2000 )
+    {
       flag_a = 0, flag_b = 0;
       //delay(2000);
-      l_sensor_sleep= true;
+      l_sensor_sleep = true;
       l_sensor_sleep_start = millis();
       Serial.println("flag reset");
     }
@@ -202,7 +213,7 @@ void people_count_upper() {       // function to detect people count at lower se
   ////// check for sensor sleep state and timeout condition
   if (u_sensor_sleep && millis() < u_sensor_sleep_start + sensor_sleep_mils )
   {
-    if (u_sensor_sleep!= u_last_sleep) {
+    if (u_sensor_sleep != u_last_sleep) {
       Serial.println("upper sleep start");
       u_last_sleep = u_sensor_sleep;
     }
@@ -210,34 +221,37 @@ void people_count_upper() {       // function to detect people count at lower se
   }
   else
   {
-    if (u_sensor_sleep!= u_last_sleep) {
+    if (u_sensor_sleep != u_last_sleep) {
       Serial.println("upper sleep end");
       u_last_sleep = u_sensor_sleep;
     }
-    u_sensor_sleep= false;  // sensor sleep is over so set the bool to false and let the function continue
+    u_sensor_sleep = false; // sensor sleep is over so set the bool to false and let the function continue
   }
 
   dis_c = read_sensor(sensor_c);      // read sensor a
   if (dis_c < DISTANCE_THRESHOLD ) {
-    Serial.print("sC triggered: ");Serial.println(dis_c);
+    Serial.print("sC triggered: "); Serial.println(dis_c);
     //Serial.print("flag_c : "); Serial.println(flag_c);
     //Serial.print("flag_d : "); Serial.println(flag_d);
   }
 
   if (person > 0 || dis_d < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
     dis_d = read_sensor(sensor_d);
-    if (dis_d < DISTANCE_THRESHOLD ) {Serial.print("sD triggered: ");Serial.println(dis_d);}
+    if (dis_d < DISTANCE_THRESHOLD ) {
+      Serial.print("sD triggered: ");
+      Serial.println(dis_d);
+    }
   }
   //Serial.print("da:"); Serial.println(dis_c);
   //Serial.print("db:"); Serial.println(dis_d);
-  
+
   if (dis_c < DISTANCE_THRESHOLD && flag_c == 0) {
     flag_c = 1;
     u_last_flag_change = millis();
     if (flag_d == 0) {
       person = person + 1;
       last_active = millis();
-       last_active_group = UPPER;
+      last_active_group = UPPER;
       //u_sensor_sleep= true;
       //u_sensor_sleep_start = millis();
     }
@@ -255,14 +269,14 @@ void people_count_upper() {       // function to detect people count at lower se
       //u_sensor_sleep_start = millis();
     }
   }
- // <------reset the flags after both have been triggered and also use a timeout in case the second sensor missed
-  if (dis_c > DISTANCE_THRESHOLD && dis_d > DISTANCE_THRESHOLD && ((flag_c == 1 || flag_d == 1))) 
+  // <------reset the flags after both have been triggered and also use a timeout in case the second sensor missed
+  if (dis_c > DISTANCE_THRESHOLD && dis_d > DISTANCE_THRESHOLD && ((flag_c == 1 || flag_d == 1)))
   {
-      if ((flag_c == 1 && flag_d == 1) || millis() > u_last_flag_change+2000 ) 
-      {
+    if ((flag_c == 1 && flag_d == 1) || millis() > u_last_flag_change + 2000 )
+    {
       flag_c = 0, flag_d = 0;
       //delay(2000);
-      u_sensor_sleep= true;
+      u_sensor_sleep = true;
       u_sensor_sleep_start = millis();
       Serial.println("flag reset");
     }
@@ -271,7 +285,7 @@ void people_count_upper() {       // function to detect people count at lower se
 
 void animate_state() {
 
-  if (person != last_person)              // Set the anim state based on people count change.  
+  if (person != last_person)              // Set the anim state based on people count change.
   {
     Serial.print("Person count:  ----------------------> ");
     Serial.println(person);
@@ -279,7 +293,7 @@ void animate_state() {
     if (person == 1 && last_person == 0 )     // NEED a last activity variable to know which sensor group activity came from
     {
       if (last_active_group == LOWER) {
-      //Serial.println("LOWER_ON");
+        //Serial.println("LOWER_ON");
         anim_state = LOWER_ON;
       } else {
         anim_state = UPPER_ON;
@@ -299,7 +313,7 @@ void animate_state() {
   if (person > 0 && millis() > lights_out_timeout + last_active)
   {
     Serial.println("lights out timeout");
-    person=0;
+    person = 0;
     sr.setAllLow();
   }
 
@@ -317,7 +331,7 @@ void animate_state() {
       //Serial.println(anim_counter);
       anim_start = millis();
     }
-    if ( anim_counter >= 15 ) 
+    if ( anim_counter >= 15 )
     {
       anim_state = NONE;
       Serial.println("--------------> Start UPPER_ON");
@@ -339,14 +353,14 @@ void animate_state() {
       //Serial.println(anim_counter);
       anim_start = millis();
     }
-    if ( anim_counter >= 15 ) 
+    if ( anim_counter >= 15 )
     {
       anim_state = NONE;
       Serial.println("--------------> Stop UPPER_off");
     }
 
   }
-    if (anim_state == LOWER_ON) {
+  if (anim_state == LOWER_ON) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 15;
@@ -360,7 +374,7 @@ void animate_state() {
       //Serial.println(anim_counter);
       anim_start = millis();
     }
-    if ( anim_counter == 0 ) 
+    if ( anim_counter == 0 )
     {
       anim_state = NONE;
       Serial.println("--------------> Stop LOWER_ON");
@@ -395,15 +409,16 @@ void animate_state() {
 
 void detect_button()
 {
-  
+
   buttonState = digitalRead(buttonPin);
   uint8_t pinValues[] = { B00000001, B01000000};
-  uint8_t pinValues1[] = { B01010101, B01010101};   
-      
+  uint8_t pinValues1[] = { B01010101, B01010101};
+
 
   // compare the buttonState to its previous state
   if (buttonState != lastButtonState) {
-     EEPROM.write(0, buttonPushCounter);
+    delay(50);
+    EEPROM.write(0, buttonPushCounter);
     // if the state has changed, increment the counter
     if (buttonState == HIGH) {
       // if the current state is HIGH then the button went from off to on:
@@ -414,27 +429,37 @@ void detect_button()
     }
     if (buttonPushCounter == 4 ) {
       Serial.println("setting count = 0");
-      person = 0;(anim_state = NONE);
+      person = 0; (anim_state = NONE);
       sr.setAll(pinValues);
-      delay(1500);
+      delay(2500);
       sr.setAllLow();
     }
-     
-    
+    if (buttonPushCounter > 4)
+    {
+      anim_state = NONE;
+      buttonPushCounter = 1;
+    }
+
+
     lastButtonState = buttonState;
 
     if (buttonPushCounter == 1) {
+      anim_state = NONE;
       sr.setAll(pinValues1);
     }
     if (buttonPushCounter == 2) {
-      sr.setAllHigh();     
+      sr.setAllHigh();
     }
     if (buttonPushCounter == 3) {
-    sr.setAllLow();
+      sr.setAllLow();
     }
     if (buttonPushCounter == 4) {
-    
+
       sensor_control = true;
+    } else {
+      sensor_control = false;
     }
+
+
   }
 }
