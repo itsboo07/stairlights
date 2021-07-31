@@ -4,28 +4,17 @@
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-#define BOOPINS 1           // change 0 for TAVIS to change hardware pins
-#if BOOPINS == 1
-  // lower group
-  #define e_sA 2 //echo pin
-  #define t_sA 3 //Trigger pin
-  #define e_sB 4 //echo pin
-  #define t_sB 5 //Trigger pin
-  // upper group 
-  #define e_sC 6 //echo pin
-  #define t_sC 7 //Trigger pin
-  #define e_sD 8 //echo pin
-  #define t_sD 9 //Trigger pin
-#else
-  #define e_sA A1 //echo pin
-  #define t_sA A0 //Trigger pin
-  #define e_sB A3 //echo pin
-  #define t_sB A2 //Trigger pin
-  #define e_sC 6 //echo pin
-  #define t_sC 7 //Trigger pin
-  #define e_sD 8 //echo pin
-  #define t_sD 9 //Trigger pin
-#endif
+
+// lower group
+#define e_sA 2 //echo pin
+#define t_sA 3 //Trigger pin
+#define e_sB 4 //echo pin
+#define t_sB 5 //Trigger pin
+// upper group 
+#define e_sC 6 //echo pin
+#define t_sC 7 //Trigger pin
+#define e_sD 8 //echo pin
+#define t_sD 9 //Trigger pin
 
 UltraSonicDistanceSensor sensor_a(t_sA, e_sA);  //
 UltraSonicDistanceSensor sensor_b(t_sB, e_sB);  //
@@ -43,11 +32,13 @@ ShiftRegister74HC595<2> sr(14, 16, 15);
 
 
 /// Animation states
-#define TOUPON 1
-#define TOUPOFF 2
-#define TODOWNON 3
-#define TODOWNOFF 4
+#define UPPER_ON 1
+#define UPPER_OFF 2
+#define LOWER_ON 3
+#define LOWER_OFF 4
 #define NONE -1
+#define LOWER 0
+#define UPPER 1
 
 int anim_state = NONE;                // state variable for current animation state
 int last_anim_state = -1;             // last state of above
@@ -55,8 +46,9 @@ unsigned long anim_start = 0;         // millis for when animation has started
 
 int person = 0, last_person = 0;      // person counter and last person -- used to detect when person count has changed
 int anim_counter = 0;                 // animation counter -- used to keep track of animation progress
-const int sensor_sleep_mils = 2000;   // amount of time to sleep a sensor pair after both get triggered
-
+const int sensor_sleep_mils = 1000;   // amount of time to sleep a sensor pair after both get triggered
+const unsigned long lights_out_timeout = 60000; // 1min with no activity we reset
+int last_active_group = LOWER;
 ////////////////////////////////////////// Lower floor sensor group
 long dis_a = 1000, dis_b = 1000;        // distance return in cm for each sensor of lower group
 int flag_a = 0, flag_b = 0;             // flags for lower sensors
@@ -142,15 +134,15 @@ void people_count_lower() {       // function to detect people count at lower se
   }
 
   dis_a = read_sensor(sensor_a);      // read sensor a
-//  if (dis_a < DISTANCE_THRESHOLD ) {
-    //Serial.print("s1 triggered: ");Serial.println(dis_a);
+  if (dis_a < DISTANCE_THRESHOLD ) {
+    Serial.print("sA triggered: ");Serial.println(dis_a);
     //Serial.print("flag_a : "); Serial.println(flag_a);
     //Serial.print("flag_b : "); Serial.println(flag_b);
-//  }
+  }
 
   if (person > 0 || dis_b < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
     dis_b = read_sensor(sensor_b);
-    //if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("s2 triggered: ");Serial.println(dis_b);}
+    if (dis_b < DISTANCE_THRESHOLD ) {Serial.print("sB triggered: ");Serial.println(dis_b);}
   }
   //Serial.print("da:"); Serial.println(dis_a);
   //Serial.print("db:"); Serial.println(dis_b);
@@ -160,6 +152,7 @@ void people_count_lower() {       // function to detect people count at lower se
     l_last_flag_change = millis();
     if (flag_b == 0) {
       person = person + 1;
+      last_active_group = LOWER;
       last_active = millis();
       //l_sensor_sleep= true;
       //l_sensor_sleep_start = millis();
@@ -170,7 +163,10 @@ void people_count_lower() {       // function to detect people count at lower se
     flag_b = 1;
     l_last_flag_change = millis();
     if (flag_a == 0) {
-      if (person > 0) person = person - 1;
+      if (person > 0) {
+        person = person - 1;
+        last_active_group = LOWER;
+      }
       //l_sensor_sleep= true;
       //l_sensor_sleep_start = millis();
     }
@@ -210,15 +206,15 @@ void people_count_upper() {       // function to detect people count at lower se
   }
 
   dis_c = read_sensor(sensor_c);      // read sensor a
-//  if (dis_c < DISTANCE_THRESHOLD ) {
-    //Serial.print("s1 triggered: ");Serial.println(dis_c);
+  if (dis_c < DISTANCE_THRESHOLD ) {
+    Serial.print("sC triggered: ");Serial.println(dis_c);
     //Serial.print("flag_c : "); Serial.println(flag_c);
     //Serial.print("flag_d : "); Serial.println(flag_d);
-//  }
+  }
 
   if (person > 0 || dis_d < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
     dis_d = read_sensor(sensor_d);
-    //if (dis_d < DISTANCE_THRESHOLD ) {Serial.print("s2 triggered: ");Serial.println(dis_d);}
+    if (dis_d < DISTANCE_THRESHOLD ) {Serial.print("sD triggered: ");Serial.println(dis_d);}
   }
   //Serial.print("da:"); Serial.println(dis_c);
   //Serial.print("db:"); Serial.println(dis_d);
@@ -229,6 +225,7 @@ void people_count_upper() {       // function to detect people count at lower se
     if (flag_d == 0) {
       person = person + 1;
       last_active = millis();
+       last_active_group = UPPER;
       //u_sensor_sleep= true;
       //u_sensor_sleep_start = millis();
     }
@@ -238,7 +235,10 @@ void people_count_upper() {       // function to detect people count at lower se
     flag_d = 1;
     u_last_flag_change = millis();
     if (flag_c == 0) {
-      if (person > 0) person = person - 1;
+      if (person > 0) {
+        person = person - 1;
+        last_active_group = UPPER;
+      }
       //u_sensor_sleep= true;
       //u_sensor_sleep_start = millis();
     }
@@ -261,34 +261,42 @@ void animate_state() {
 
   if (person != last_person)              // Set the anim state based on people count change.  
   {
-    Serial.print("Person count: ");
+    Serial.print("Person count:  ----------------------> ");
     Serial.println(person);
 
     if (person == 1 && last_person == 0 )     // NEED a last activity variable to know which sensor group activity came from
     {
-      Serial.println("TODOWNON");
-      anim_state = TODOWNON;
+      if (last_active_group == LOWER) {
+      //Serial.println("LOWER_ON");
+        anim_state = LOWER_ON;
+      } else {
+        anim_state = UPPER_ON;
+      }
     }
     if (person == 0 && last_person == 1)
     {
-      Serial.println("TOUPOFF");
-      anim_state = TOUPOFF;
+      if (last_active_group == UPPER) {
+        anim_state = UPPER_OFF;
+      } else {
+        anim_state = LOWER_OFF;
+      }
     }
     last_person = person;
   }
 
-  if (person>0 && (millis()> 15000 + last_active))
+  if (person > 0 && millis() > lights_out_timeout + last_active)
   {
+    Serial.println("lights out timeout");
     person=0;
     sr.setAllLow();
   }
 
-  if (anim_state == TOUPON) {
+  if (anim_state == UPPER_ON) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 0;
       sr.set(anim_counter, HIGH);
-      Serial.println("starting toupon ");
+      Serial.println("--------------> Start UPPER_ON ");
       anim_start = millis();
     } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
       anim_counter++;
@@ -300,17 +308,17 @@ void animate_state() {
     if ( anim_counter >= 15 ) 
     {
       anim_state = NONE;
-      Serial.println("stopped toupon");
+      Serial.println("--------------> Start UPPER_ON");
     }
 
   }
 
-  if (anim_state == TOUPOFF) {
+  if (anim_state == UPPER_OFF) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 0;
       sr.set(anim_counter, LOW);
-      Serial.println("starting toupOff ");
+      Serial.println("--------------> Start UPPER_OFF ");
       anim_start = millis();
     } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
       anim_counter++;
@@ -322,16 +330,16 @@ void animate_state() {
     if ( anim_counter >= 15 ) 
     {
       anim_state = NONE;
-      Serial.println("stopped toupoff");
+      Serial.println("--------------> Stop UPPER_off");
     }
 
   }
-    if (anim_state == TODOWNON) {
+    if (anim_state == LOWER_ON) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 15;
       sr.set(anim_counter, HIGH);
-      Serial.println("starting todownon ");
+      Serial.println("--------------> Start LOWER_ON ");
       anim_start = millis();
     } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
       anim_counter--;
@@ -343,18 +351,18 @@ void animate_state() {
     if ( anim_counter == 0 ) 
     {
       anim_state = NONE;
-      Serial.println("stopped todownon");
+      Serial.println("--------------> Stop LOWER_ON");
     }
 
   }
 
 
-  if (anim_state == TODOWNOFF) {
+  if (anim_state == LOWER_OFF) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 15;
       sr.set(anim_counter, LOW);
-      Serial.println("starting todownoff");
+      Serial.println("--------------> Start LOWER_OFF");
       anim_start = millis();
     } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
       anim_counter--;
@@ -366,7 +374,7 @@ void animate_state() {
     if ( anim_counter == 0 )
     {
       anim_state = NONE;
-      Serial.println("stopped todownoff");
+      Serial.println("--------------> Stop LOWER_OFF");
     }
   }
   last_anim_state = anim_state;
