@@ -1,10 +1,11 @@
 #include <ShiftRegister74HC595.h>
 #include "HCSR04_Custom.h"
+#include <EEPROM.h>   //We need this library
 
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-
+#define buttonPin 10
 // lower group
 #define e_sA 2 //echo pin
 #define t_sA 3 //Trigger pin
@@ -65,6 +66,12 @@ bool u_sensor_sleep = false;            // boolean to indicated that a sensor pa
 bool u_last_sleep = false;              // boolean to detect a change in sleep status
 unsigned long u_last_flag_change;       // the time when a flag was last changed in upper group
 
+int buttonPushCounter = 0;              // counter for the number of button presses
+int buttonState = 0;                    // current state of the button
+int lastButtonState = 0;                // previous state of the button
+bool sensor_control = false;
+
+
 
 unsigned long last_active = 0;        // the time when we last had activity -- used to timeout a lights on condition if the senosr missed the exit
 
@@ -107,9 +114,14 @@ void setup() {
 
 void loop() {
 
-  people_count_lower();
-  people_count_upper();
+  detect_button();      // detect button will set sensor_control = true if we at buttoncounter 3
+  if (sensor_control) {
+    people_count_lower();
+    people_count_upper();
+    
+  }
   animate_state();
+
 
 }
 
@@ -378,4 +390,51 @@ void animate_state() {
     }
   }
   last_anim_state = anim_state;
+}
+
+
+void detect_button()
+{
+  
+  buttonState = digitalRead(buttonPin);
+  uint8_t pinValues[] = { B00000001, B01000000};
+  uint8_t pinValues1[] = { B01010101, B01010101};   
+      
+
+  // compare the buttonState to its previous state
+  if (buttonState != lastButtonState) {
+     EEPROM.write(0, buttonPushCounter);
+    // if the state has changed, increment the counter
+    if (buttonState == HIGH) {
+      // if the current state is HIGH then the button went from off to on:
+      buttonPushCounter++;
+      Serial.println("on");
+      Serial.print("number of button pushes: ");
+      Serial.println(buttonPushCounter);
+    }
+    if (buttonPushCounter == 4 ) {
+      Serial.println("setting count = 0");
+      person = 0;(anim_state = NONE);
+      sr.setAll(pinValues);
+      delay(1500);
+      sr.setAllLow();
+    }
+     
+    
+    lastButtonState = buttonState;
+
+    if (buttonPushCounter == 1) {
+      sr.setAll(pinValues1);
+    }
+    if (buttonPushCounter == 2) {
+      sr.setAllHigh();     
+    }
+    if (buttonPushCounter == 3) {
+    sr.setAllLow();
+    }
+    if (buttonPushCounter == 4) {
+    
+      sensor_control = true;
+    }
+  }
 }
