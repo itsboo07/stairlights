@@ -7,30 +7,30 @@
 #define BOOPINS 1           // change 0 for TAVIS to change hardware pins
 #if BOOPINS == 1
   // lower group
-  #define e_sa 2 //echo pin
-  #define t_sa 3 //Trigger pin
-  #define e_sb 4 //echo pin
-  #define t_sb 5 //Trigger pin
+  #define e_sA 2 //echo pin
+  #define t_sA 3 //Trigger pin
+  #define e_sB 4 //echo pin
+  #define t_sB 5 //Trigger pin
   // upper group 
-  #define e_sc 6 //echo pin
-  #define t_sc 7 //Trigger pin
-  #define e_sd 8 //echo pin
-  #define t_sd 9 //Trigger pin
+  #define e_sC 6 //echo pin
+  #define t_sC 7 //Trigger pin
+  #define e_sD 8 //echo pin
+  #define t_sD 9 //Trigger pin
 #else
-  #define e_sa A1 //echo pin
-  #define t_sa A0 //Trigger pin
-  #define e_sb A3 //echo pin
-  #define t_sb A2 //Trigger pin
-  #define e_sc 6 //echo pin
-  #define t_sc 7 //Trigger pin
-  #define e_sd 8 //echo pin
-  #define t_sd 9 //Trigger pin
+  #define e_sA A1 //echo pin
+  #define t_sA A0 //Trigger pin
+  #define e_sB A3 //echo pin
+  #define t_sB A2 //Trigger pin
+  #define e_sC 6 //echo pin
+  #define t_sC 7 //Trigger pin
+  #define e_sD 8 //echo pin
+  #define t_sD 9 //Trigger pin
 #endif
 
-UltraSonicDistanceSensor sensor_a(t_sa, e_sa);  //
-UltraSonicDistanceSensor sensor_b(t_sb, e_sb);  //
-UltraSonicDistanceSensor sensor_c(t_sc, e_sc);  //
-UltraSonicDistanceSensor sensor_d(t_sd, e_sd);  //
+UltraSonicDistanceSensor sensor_a(t_sA, e_sA);  //
+UltraSonicDistanceSensor sensor_b(t_sB, e_sB);  //
+UltraSonicDistanceSensor sensor_c(t_sC, e_sC);  //
+UltraSonicDistanceSensor sensor_d(t_sD, e_sD);  //
 int person_count = 0;
 const int m_count = MEASURE_COUNT ;
 
@@ -100,10 +100,14 @@ void animate_state();
 
 void setup() {
   Serial.begin(9600);// initialize serial communication at 9600 bits per second:
-  pinMode(t_s1, OUTPUT);
-  pinMode(e_s1, INPUT);
-  pinMode(t_s2, OUTPUT);
-  pinMode(e_s2, INPUT);
+  pinMode(t_sA, OUTPUT);
+  pinMode(e_sA, INPUT);
+  pinMode(t_sB, OUTPUT);
+  pinMode(e_sB, INPUT);
+  pinMode(t_sC, OUTPUT);
+  pinMode(e_sC, INPUT);
+  pinMode(t_sD, OUTPUT);
+  pinMode(e_sD, INPUT);
 
 
   Serial.println("BOO Staircase Started");
@@ -112,7 +116,7 @@ void setup() {
 void loop() {
 
   people_count_lower();
-  pwople_count_upper();
+  people_count_upper();
   animate_state();
 
 }
@@ -224,7 +228,7 @@ void people_count_upper() {       // function to detect people count at lower se
     u_last_flag_change = millis();
     if (flag_d == 0) {
       person = person + 1;
-      last_cctive = millis();
+      last_active = millis();
       //u_sensor_sleep= true;
       //u_sensor_sleep_start = millis();
     }
