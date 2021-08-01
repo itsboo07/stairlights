@@ -7,7 +7,7 @@
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-#define buttonPin 10
+#define buttonPin 12
 // lower group
 #define e_sA 2 //echo pin
 #define t_sA 3 //Trigger pin
@@ -425,17 +425,18 @@ void detect_button()
       Serial.println("on");
       Serial.print("number of button pushes: ");
       Serial.println(buttonPushCounter);
-    }
       if (buttonPushCounter == 4 ) {
         Serial.println("setting count = 0");
         person_count = 0;
         anim_state = NONE;
         sr.setAll(pinValues);
-        delay(1500);
+        delay(3000);
         sr.setAllLow();
       } else {
         sensor_control = false;
       }
+    }
+      
      
     
     lastButtonState = buttonState;
