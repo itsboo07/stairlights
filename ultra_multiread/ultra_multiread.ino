@@ -119,6 +119,7 @@ void setup() {
   pinMode(e_sD, INPUT);
   pinMode (buttonPin, INPUT);
   buttonPushCounter = EEPROM.read(0);
+  Serial.print("EEPROM_lastButtonRead: ");
   Serial.println(EEPROM.read(0));
 //  Serial.println(potVal);
 
