@@ -7,7 +7,7 @@
 //#define D_THRESHOLD 100     // the minimum maximum distance to indicate a trigger
 #define MEASURE_COUNT 3;   // the number of measurement below the threshold in a row required to indicate a person
 
-#define buttonPin 12
+#define buttonPin A3
 // lower group
 #define e_sA 2 //echo pin
 #define t_sA 3 //Trigger pin
@@ -119,8 +119,8 @@ void setup() {
   pinMode(e_sD, INPUT);
   pinMode (buttonPin, INPUT);
   buttonPushCounter = EEPROM.read(0);
-  Serial.print(EEPROM.read(0));
-  Serial.println(potVal);
+  Serial.println(EEPROM.read(0));
+//  Serial.println(potVal);
 
 }
 
@@ -232,27 +232,27 @@ void people_count_upper() {       // function to detect people count at lower se
     u_sensor_sleep = false; // sensor sleep is over so set the bool to false and let the function continue
   }
 
-  dis_c = read_sensor(sensor_c);      // read sensor a
-  if (dis_c < DISTANCE_THRESHOLD ) {
-    Serial.print("sC triggered: "); Serial.println(dis_c);
+  dis_d = read_sensor(sensor_d);      // read sensor a
+  if (dis_d < DISTANCE_THRESHOLD ) {
+    Serial.print("sD triggered: "); Serial.println(dis_d);
     //Serial.print("flag_c : "); Serial.println(flag_c);
     //Serial.print("flag_d : "); Serial.println(flag_d);
   }
 
-  if (person > 0 || dis_d < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
-    dis_d = read_sensor(sensor_d);
-    if (dis_d < DISTANCE_THRESHOLD ) {
-      Serial.print("sD triggered: ");
-      Serial.println(dis_d);
+  if (person > 0 || dis_c < DISTANCE_THRESHOLD) {   // if we have people to exit, or last reading was a trigger
+    dis_c = read_sensor(sensor_c);
+    if (dis_c < DISTANCE_THRESHOLD ) {
+      Serial.print("sC triggered: ");
+      Serial.println(dis_c);
     }
   }
   //Serial.print("da:"); Serial.println(dis_c);
   //Serial.print("db:"); Serial.println(dis_d);
 
-  if (dis_c < DISTANCE_THRESHOLD && flag_c == 0) {
-    flag_c = 1;
+  if (dis_d < DISTANCE_THRESHOLD && flag_d == 0) {
+    flag_d = 1;
     u_last_flag_change = millis();
-    if (flag_d == 0) {
+    if (flag_c == 0) {
       person = person + 1;
       last_active = millis();
       last_active_group = UPPER;
@@ -261,10 +261,10 @@ void people_count_upper() {       // function to detect people count at lower se
     }
   }
 
-  if (dis_d < DISTANCE_THRESHOLD && flag_d == 0) {
-    flag_d = 1;
+  if (dis_c < DISTANCE_THRESHOLD && flag_c == 0) {
+    flag_c = 1;
     u_last_flag_change = millis();
-    if (flag_c == 0) {
+    if (flag_d == 0) {
       if (person > 0) {
         person = person - 1;
         last_active_group = UPPER;
@@ -289,6 +289,7 @@ void people_count_upper() {       // function to detect people count at lower se
 
 void animate_state() {
   potVal  = analogRead(potPin);       // Read the analog value of the potmeter (0-1023)
+  
   if (person != last_person)              // Set the anim state based on people count change.
   {
     Serial.print("Person count:  ----------------------> ");
@@ -306,9 +307,9 @@ void animate_state() {
     if (person == 0 && last_person == 1)
     {
       if (last_active_group == UPPER) {
-        anim_state = UPPER_OFF;
-      } else {
         anim_state = LOWER_OFF;
+      } else {
+        anim_state = UPPER_OFF;
       }
     }
     last_person = person;
@@ -321,57 +322,57 @@ void animate_state() {
     sr.setAllLow();
   }
 
-  if (anim_state == UPPER_ON) {
-    //anim_start = millis();
-    if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
-      anim_counter = 0;
-      sr.set(anim_counter, HIGH);
-      Serial.println("--------------> Start UPPER_ON ");
-      anim_start = millis();
-    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
-      anim_counter++;
-      sr.set(anim_counter, HIGH);
-      //Serial.print(" lights on ");
-      //Serial.println(anim_counter);
-      anim_start = millis();
-    }
-    if ( anim_counter >= 15 )
-    {
-      anim_state = NONE;
-      Serial.println("--------------> Start UPPER_ON");
-    }
-
-  }
-
-  if (anim_state == UPPER_OFF) {
-    //anim_start = millis();
-    if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
-      anim_counter = 0;
-      sr.set(anim_counter, LOW);
-      Serial.println("--------------> Start UPPER_OFF ");
-      anim_start = millis();
-    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
-      anim_counter++;
-      sr.set(anim_counter, LOW);
-      //Serial.print(" lights off ");
-      //Serial.println(anim_counter);
-      anim_start = millis();
-    }
-    if ( anim_counter >= 15 )
-    {
-      anim_state = NONE;
-      Serial.println("--------------> Stop UPPER_off");
-    }
-
-  }
   if (anim_state == LOWER_ON) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
-      anim_counter = 15;
+      anim_counter = 0;
       sr.set(anim_counter, HIGH);
       Serial.println("--------------> Start LOWER_ON ");
       anim_start = millis();
     } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
+      anim_counter++;
+      sr.set(anim_counter, HIGH);
+      //Serial.print(" lights on ");
+      //Serial.println(anim_counter);
+      anim_start = millis();
+    }
+    if ( anim_counter >= 15 )
+    {
+      anim_state = NONE;
+      Serial.println("--------------> Start LOWER_ON");
+    }
+
+  }
+
+  if (anim_state == LOWER_OFF) {
+    //anim_start = millis();
+    if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
+      anim_counter = 0;
+      sr.set(anim_counter, LOW);
+      Serial.println("--------------> Start LOWER_OFF ");
+      anim_start = millis();
+    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
+      anim_counter++;
+      sr.set(anim_counter, LOW);
+      //Serial.print(" lights off ");
+      //Serial.println(anim_counter);
+      anim_start = millis();
+    }
+    if ( anim_counter >= 15 )
+    {
+      anim_state = NONE;
+      Serial.println("--------------> Stop LOWER_OFF");
+    }
+
+  }
+  if (anim_state == UPPER_ON) {
+    //anim_start = millis();
+    if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
+      anim_counter = 15;
+      sr.set(anim_counter, HIGH);
+      Serial.println("--------------> Start UPPER_ON ");
+      anim_start = millis();
+    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter--;
       sr.set(anim_counter, HIGH);
       //Serial.print(" lights on ");
@@ -381,18 +382,18 @@ void animate_state() {
     if ( anim_counter == 0 )
     {
       anim_state = NONE;
-      Serial.println("--------------> Stop LOWER_ON");
+      Serial.println("--------------> Stop UPPER_ON");
     }
 
   }
 
 
-  if (anim_state == LOWER_OFF) {
+  if (anim_state == UPPER_OFF) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 15;
       sr.set(anim_counter, LOW);
-      Serial.println("--------------> Start LOWER_OFF");
+      Serial.println("--------------> Start UPPER_OFF");
       anim_start = millis();
     } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter--;
@@ -404,7 +405,7 @@ void animate_state() {
     if ( anim_counter == 0 )
     {
       anim_state = NONE;
-      Serial.println("--------------> Stop LOWER_OFF");
+      Serial.println("--------------> Stop UPPER_OFF");
     }
   }
   last_anim_state = anim_state;
@@ -431,13 +432,13 @@ void detect_button()
       Serial.println(buttonPushCounter);
       if (buttonPushCounter == 4 ) {
         Serial.println("setting count = 0");
-        person_count = 0;
-        anim_state = NONE;
+        person = 0;
         sr.setAll(pinValues);
         delay(3000);
         sr.setAllLow();
-      } else {
-        sensor_control = false;
+       } 
+      else {
+      sensor_control = false;
       }
     }
       
@@ -447,6 +448,7 @@ void detect_button()
   }
 
   if (buttonPushCounter == 1) {
+     anim_state = NONE;
     sr.setAll(pinValues1);
   }
   if (buttonPushCounter == 2) {
@@ -455,12 +457,11 @@ void detect_button()
   if (buttonPushCounter == 3) {
    sr.setAllLow();
   }
-  if (buttonPushCounter == 4) {
-    
-    sensor_control = true;
-    //peopleCount();
-    //animate_state();
-  }
+   if (buttonPushCounter == 4) {
+      sensor_control = true;
+    } else {
+      sensor_control = false;
+    }
   if (buttonPushCounter > 4)
       {
        buttonPushCounter = 1;
