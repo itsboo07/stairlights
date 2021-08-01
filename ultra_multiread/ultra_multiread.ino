@@ -418,6 +418,7 @@ void detect_button()
 
   buttonState = digitalRead(buttonPin);
   uint8_t pinValues[] = { B00000001, B01000000};
+  uint8_t pinValues0[] = { B00000000, B00000000};
   uint8_t pinValues1[] = { B01010101, B01010101};   
       
 
@@ -436,7 +437,7 @@ void detect_button()
         person = 0;
         sr.setAll(pinValues);
         delay(3000);
-        sr.setAllLow();
+        sr.setAll(pinValues0);
        } 
       else {
       sensor_control = false;
