@@ -412,13 +412,12 @@ void detect_button()
 
   buttonState = digitalRead(buttonPin);
   uint8_t pinValues[] = { B00000001, B01000000};
-  uint8_t pinValues1[] = { B01010101, B01010101};
-
+  uint8_t pinValues1[] = { B01010101, B01010101};   
+      
 
   // compare the buttonState to its previous state
   if (buttonState != lastButtonState) {
-    delay(50);
-    EEPROM.write(0, buttonPushCounter);
+     EEPROM.write(0, buttonPushCounter);
     // if the state has changed, increment the counter
     if (buttonState == HIGH) {
       // if the current state is HIGH then the button went from off to on:
@@ -427,39 +426,40 @@ void detect_button()
       Serial.print("number of button pushes: ");
       Serial.println(buttonPushCounter);
     }
-    if (buttonPushCounter == 4 ) {
-      Serial.println("setting count = 0");
-      person = 0; (anim_state = NONE);
-      sr.setAll(pinValues);
-      delay(2500);
-      sr.setAllLow();
-    }
-    if (buttonPushCounter > 4)
-    {
-      anim_state = NONE;
-      buttonPushCounter = 1;
-    }
-
-
+      if (buttonPushCounter == 4 ) {
+        Serial.println("setting count = 0");
+        person_count = 0;
+        anim_state = NONE;
+        sr.setAll(pinValues);
+        delay(1500);
+        sr.setAllLow();
+      } else {
+        sensor_control = false;
+      }
+     
+    
     lastButtonState = buttonState;
-
-    if (buttonPushCounter == 1) {
-      anim_state = NONE;
-      sr.setAll(pinValues1);
-    }
-    if (buttonPushCounter == 2) {
-      sr.setAllHigh();
-    }
-    if (buttonPushCounter == 3) {
-      sr.setAllLow();
-    }
-    if (buttonPushCounter == 4) {
-
-      sensor_control = true;
-    } else {
-      sensor_control = false;
-    }
-
-
   }
+
+  if (buttonPushCounter == 1) {
+    sr.setAll(pinValues1);
+  }
+  if (buttonPushCounter == 2) {
+     sr.setAllHigh();     
+  }
+  if (buttonPushCounter == 3) {
+   sr.setAllLow();
+  }
+  if (buttonPushCounter == 4) {
+    
+    sensor_control = true;
+    //peopleCount();
+    //animate_state();
+  }
+  if (buttonPushCounter > 4)
+      {
+       buttonPushCounter = 1;
+      }
+
+
 }
