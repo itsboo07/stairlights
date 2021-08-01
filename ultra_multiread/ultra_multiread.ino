@@ -30,9 +30,13 @@ const int m_count = MEASURE_COUNT ;
 // parameters: <number of shift registers> (data pin, clock pin, latch pin)
 ShiftRegister74HC595<2> sr(14, 16, 15);
 
-#define ANIM_DELAY 400  // 100 ms between each light turnon
+
+//#define ANIM_DELAY 4000  // 100 ms between each light turnon 
+//replaced with potVal
 #define DISTANCE_THRESHOLD 80 // the distance to trigger the sensor on
 
+int potPin = A4;
+int potVal = 0; //to control the animations speed with the pot
 
 /// Animation states
 #define UPPER_ON 1
@@ -116,7 +120,7 @@ void setup() {
   pinMode (buttonPin, INPUT);
   buttonPushCounter = EEPROM.read(0);
   Serial.print(EEPROM.read(0));
-
+  Serial.println(potVal);
 
 }
 
@@ -284,7 +288,7 @@ void people_count_upper() {       // function to detect people count at lower se
 }
 
 void animate_state() {
-
+  potVal  = analogRead(potPin);       // Read the analog value of the potmeter (0-1023)
   if (person != last_person)              // Set the anim state based on people count change.
   {
     Serial.print("Person count:  ----------------------> ");
@@ -324,7 +328,7 @@ void animate_state() {
       sr.set(anim_counter, HIGH);
       Serial.println("--------------> Start UPPER_ON ");
       anim_start = millis();
-    } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
+    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter++;
       sr.set(anim_counter, HIGH);
       //Serial.print(" lights on ");
@@ -346,7 +350,7 @@ void animate_state() {
       sr.set(anim_counter, LOW);
       Serial.println("--------------> Start UPPER_OFF ");
       anim_start = millis();
-    } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
+    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter++;
       sr.set(anim_counter, LOW);
       //Serial.print(" lights off ");
@@ -367,7 +371,7 @@ void animate_state() {
       sr.set(anim_counter, HIGH);
       Serial.println("--------------> Start LOWER_ON ");
       anim_start = millis();
-    } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
+    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter--;
       sr.set(anim_counter, HIGH);
       //Serial.print(" lights on ");
@@ -390,7 +394,7 @@ void animate_state() {
       sr.set(anim_counter, LOW);
       Serial.println("--------------> Start LOWER_OFF");
       anim_start = millis();
-    } else if ( millis() > anim_start + ANIM_DELAY ) {   // continue the animation if the time interval is up
+    } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter--;
       sr.set(anim_counter, LOW);
       //Serial.print(" lights off ");
