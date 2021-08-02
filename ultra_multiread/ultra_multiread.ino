@@ -30,17 +30,6 @@ const int m_count = MEASURE_COUNT ;
 // parameters: <number of shift registers> (data pin, clock pin, latch pin)
 ShiftRegister74HC595<2> sr(14, 16, 15);
 
-// 0 -> 7   = 1st shift register
-// 8 -> 15  = 2nd shift register
-// 16 -> 23 = 3rd shift register (seven segment display)
-
-// 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, Error
-
-// Common Cathode
-//uint8_t Digits[17][8] = { {1, 1, 1, 1, 1, 1, 0, 0}, {0, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 0, 1, 1, 0, 1, 0}, {1, 1, 1, 1, 0, 0, 1, 0}, {0, 1, 1, 0, 0, 1, 1, 0}, {1, 0, 1, 1, 0, 1, 1, 0}, {1, 0, 1, 1, 1, 1, 1, 0}, {1, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1, 1, 0}, {1, 1, 1, 1, 0, 1, 1, 0}, {1, 1, 1, 0, 1, 1, 1, 0}, {0, 0, 1, 1, 1, 1, 1, 0}, {1, 0, 0, 1, 1, 1, 0, 0}, {0, 1, 1, 1, 1, 0, 1, 0}, {1, 0, 0, 1, 1, 1, 1, 0}, {1, 0, 0, 0, 1, 1, 1, 0}, {1, 0, 0, 1, 0, 0, 1, 0} };
-
-// Common Anode
-uint8_t Digits[17][8] = { {0, 0, 0, 0, 0, 0, 1, 1}, {1, 0, 0, 1, 1, 1, 1, 1}, {0, 0, 1, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 1, 0, 0, 1}, {0, 1, 0, 0, 1, 0, 0, 1}, {0, 1, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 1, 1, 1, 1, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 1, 0, 0, 0, 1}, {1, 1, 0, 0, 0, 0, 0, 1}, {0, 1, 1, 0, 0, 0, 1, 1}, {1, 0, 0, 0, 0, 1, 0, 1}, {0, 1, 1, 0, 0, 0, 0, 1}, {0, 1, 1, 1, 0, 0, 0, 1}, {0, 1, 1, 0, 1, 1, 0, 1} };
 
 //#define ANIM_DELAY 4000  // 100 ms between each light turnon 
 //replaced with potVal
@@ -50,9 +39,9 @@ int potPin = A4;
 int potVal = 0; //to control the animations speed with the pot
 
 /// Animation states
-#define UPPER_ON  1
+#define UPPER_ON 1
 #define UPPER_OFF 2
-#define LOWER_ON  3
+#define LOWER_ON 3
 #define LOWER_OFF 4
 #define NONE -1
 #define LOWER 0
@@ -64,7 +53,7 @@ unsigned long anim_start = 0;         // millis for when animation has started
 
 int person = 0, last_person = 0;      // person counter and last person -- used to detect when person count has changed
 int anim_counter = 0;                 // animation counter -- used to keep track of animation progress
-const int sensor_sleep_mils = 1000;   // amount of time to sleep a sensor pair after both get triggered
+const int sensor_sleep_mils = 1500;   // amount of time to sleep a sensor pair after both get triggered
 const unsigned long lights_out_timeout = 60000; // 1min with no activity we reset
 int last_active_group = LOWER;
 ////////////////////////////////////////// Lower floor sensor group
@@ -299,25 +288,15 @@ void people_count_upper() {       // function to detect people count at lower se
   }
 }
 
-void set_counter(int count) {
-  int value = count;
-  if(value > 17) value = 17;
-  
-  for (int i = 0 ; i < 8 ; i++ ) {
-  sr.setNoUpdate(i + 16, Digits[value][i]);
-  }
-  sr.updateRegisters(); // update the pins to the set values
-}
-
 void animate_state() {
   potVal  = analogRead(potPin);       // Read the analog value of the potmeter (0-1023)
+  uint8_t pinValues0[] = { B11111111, B11111111};   //Turn off relay
   
   if (person != last_person)              // Set the anim state based on people count change.
   {
     Serial.print("Person count:  ----------------------> ");
     Serial.println(person);
-    set_counter(person);
-    
+
     if (person == 1 && last_person == 0 )     // NEED a last activity variable to know which sensor group activity came from
     {
       if (last_active_group == LOWER) {
@@ -342,20 +321,19 @@ void animate_state() {
   {
     Serial.println("lights out timeout");
     person = 0;
-    sr.setAllLow();
-    set_counter(person); // reset display
+    sr.setAll(pinValues0);
   }
 
   if (anim_state == LOWER_ON) {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 0;
-      sr.set(anim_counter, HIGH);
+      sr.set(anim_counter, LOW);
       Serial.println("--------------> Start LOWER_ON ");
       anim_start = millis();
     } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter++;
-      sr.set(anim_counter, HIGH);
+      sr.set(anim_counter, LOW);
       //Serial.print(" lights on ");
       //Serial.println(anim_counter);
       anim_start = millis();
@@ -372,12 +350,12 @@ void animate_state() {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 0;
-      sr.set(anim_counter, LOW);
+      sr.set(anim_counter, HIGH);
       Serial.println("--------------> Start LOWER_OFF ");
       anim_start = millis();
     } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter++;
-      sr.set(anim_counter, LOW);
+      sr.set(anim_counter, HIGH);
       //Serial.print(" lights off ");
       //Serial.println(anim_counter);
       anim_start = millis();
@@ -393,12 +371,12 @@ void animate_state() {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 15;
-      sr.set(anim_counter, HIGH);
+      sr.set(anim_counter, LOW);
       Serial.println("--------------> Start UPPER_ON ");
       anim_start = millis();
     } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter--;
-      sr.set(anim_counter, HIGH);
+      sr.set(anim_counter, LOW);
       //Serial.print(" lights on ");
       //Serial.println(anim_counter);
       anim_start = millis();
@@ -416,12 +394,12 @@ void animate_state() {
     //anim_start = millis();
     if (anim_state != last_anim_state) { // state just changed, lets set the anim_counter to 0
       anim_counter = 15;
-      sr.set(anim_counter, LOW);
+      sr.set(anim_counter, HIGH);
       Serial.println("--------------> Start UPPER_OFF");
       anim_start = millis();
     } else if ( millis() > anim_start + potVal ) {   // continue the animation if the time interval is up
       anim_counter--;
-      sr.set(anim_counter, LOW);
+      sr.set(anim_counter, HIGH);
       //Serial.print(" lights off ");
       //Serial.println(anim_counter);
       anim_start = millis();
@@ -440,9 +418,10 @@ void detect_button()
 {
 
   buttonState = digitalRead(buttonPin);
-  uint8_t pinValues[] = { B00000001, B01000000};
-  uint8_t pinValues0[] = { B00000000, B00000000};
-  uint8_t pinValues1[] = { B01010101, B01010101};   
+  uint8_t pinValues[] = { B11111110, B10111111};      //Turn on 1st and last relay
+  uint8_t pinValues0[] = { B11111111, B11111111};     //Turn off all relay
+  uint8_t pinValues2[] = { B00000000, B00000000};     //Turn on all relay
+  uint8_t pinValues1[] = { B10101010, B10101010};     //Turn on alternative relays  
       
 
   // compare the buttonState to its previous state
@@ -477,10 +456,10 @@ void detect_button()
     sr.setAll(pinValues1);
   }
   if (buttonPushCounter == 2) {
-     sr.setAllHigh();     
+     sr.setAll(pinValues2);     
   }
   if (buttonPushCounter == 3) {
-   sr.setAllLow();
+   sr.setAll(pinValues0);
   }
    if (buttonPushCounter == 4) {
       sensor_control = true;
@@ -492,5 +471,5 @@ void detect_button()
        buttonPushCounter = 1;
       }
 
-   set_counter(person); // reset display
+
 }
