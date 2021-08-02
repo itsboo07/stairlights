@@ -114,6 +114,16 @@ int read_sensor(UltraSonicDistanceSensor &sensor) {    /// take multiple reading
   return last_d;
 }
 
+void set_counter(int count) {
+  int value = count;
+  if(value > 17) value = 17;
+  
+  for (int i = 0 ; i < 8 ; i++ ) {
+  sr.setNoUpdate(i + 16, Digits[value][i]);
+  }
+  sr.updateRegisters(); // update the pins to the set values
+}
+
 // forward declaration.
 void people_count_lower();
 void people_count_upper();
@@ -306,15 +316,7 @@ void people_count_upper() {       // function to detect people count at lower se
   }
 }
 
-void set_counter(int count) {
-  int value = count;
-  if(value > 17) value = 17;
-  
-  for (int i = 0 ; i < 8 ; i++ ) {
-  sr.setNoUpdate(i + 16, Digits[value][i]);
-  }
-  sr.updateRegisters(); // update the pins to the set values
-}
+
 
 void animate_state() {
   potVal  = analogRead(potPin);       // Read the analog value of the potmeter (0-1023)
