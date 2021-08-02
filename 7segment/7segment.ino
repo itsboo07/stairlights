@@ -39,14 +39,29 @@ ShiftRegister74HC595<3> sr(14, 16, 15);
 
 // Common Cathode
 //uint8_t Digits[17][8] = { {1, 1, 1, 1, 1, 1, 0, 0}, {0, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 0, 1, 1, 0, 1, 0}, {1, 1, 1, 1, 0, 0, 1, 0}, {0, 1, 1, 0, 0, 1, 1, 0}, {1, 0, 1, 1, 0, 1, 1, 0}, {1, 0, 1, 1, 1, 1, 1, 0}, {1, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1, 1, 0}, {1, 1, 1, 1, 0, 1, 1, 0}, {1, 1, 1, 0, 1, 1, 1, 0}, {0, 0, 1, 1, 1, 1, 1, 0}, {1, 0, 0, 1, 1, 1, 0, 0}, {0, 1, 1, 1, 1, 0, 1, 0}, {1, 0, 0, 1, 1, 1, 1, 0}, {1, 0, 0, 0, 1, 1, 1, 0}, {1, 0, 0, 1, 0, 0, 1, 0} };
-
 // Common Anode
-uint8_t Digits[17][8] = { {0, 0, 0, 0, 0, 0, 1, 1}, {1, 0, 0, 1, 1, 1, 1, 1}, {0, 0, 1, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 1, 0, 0, 1}, {0, 1, 0, 0, 1, 0, 0, 1}, {0, 1, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 1, 1, 1, 1, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 1, 0, 0, 0, 1}, {1, 1, 0, 0, 0, 0, 0, 1}, {0, 1, 1, 0, 0, 0, 1, 1}, {1, 0, 0, 0, 0, 1, 0, 1}, {0, 1, 1, 0, 0, 0, 0, 1}, {0, 1, 1, 1, 0, 0, 0, 1}, {0, 1, 1, 0, 1, 1, 0, 1} };
-
+uint8_t Digits[17][8] = 
+{ {0, 0, 0, 0, 0, 0, 1, 1},  //0 
+{1, 0, 0, 1, 1, 1, 1, 1}, //1
+{0, 0, 1, 0, 0, 1, 0, 1}, //2
+{0, 0, 0, 0, 1, 1, 0, 1}, //3
+{1, 0, 0, 1, 1, 0, 0, 1}, //4
+{0, 1, 0, 0, 1, 0, 0, 1}, //5
+{0, 1, 0, 0, 0, 0, 0, 1}, //6
+{0, 0, 0, 1, 1, 1, 1, 1}, //7
+{0, 0, 0, 0, 0, 0, 0, 1}, //8
+{0, 0, 0, 0, 1, 0, 0, 1}, //9
+{0, 0, 0, 1, 0, 0, 0, 1}, //A
+{1, 1, 0, 0, 0, 0, 0, 1}, //b
+{0, 1, 1, 0, 0, 0, 1, 1}, //C
+{1, 0, 0, 0, 0, 1, 0, 1}, //d 
+{0, 1, 1, 0, 0, 0, 0, 1}, //E
+{0, 1, 1, 1, 0, 0, 0, 1}, //F
+{0, 1, 1, 0, 1, 1, 0, 1} };  //ERROR
 
 //#define ANIM_DELAY 4000  // 100 ms between each light turnon 
 //replaced with potVal
-#define DISTANCE_THRESHOLD 60 // the distance to trigger the sensor on
+#define DISTANCE_THRESHOLD 10 // the distance to trigger the sensor on
 
 int potPin = A4;
 int potVal = 0; //to control the animations speed with the pot
@@ -60,15 +75,16 @@ int potVal = 0; //to control the animations speed with the pot
 #define LOWER 0
 #define UPPER 1
 
-uint8_t pinValues0[] = { B11111111, B11111111};
 
+uint8_t pinValues0[] = { B11111111, B11111111, B11000000};     //Turn off all relay with 0
+ 
 int anim_state = NONE;                // state variable for current animation state
 int last_anim_state = -1;             // last state of above
 unsigned long anim_start = 0;         // millis for when animation has started
 
 int person = 0, last_person = 0;      // person counter and last person -- used to detect when person count has changed
 int anim_counter = 0;                 // animation counter -- used to keep track of animation progress
-const int sensor_sleep_mils = 1500;   // amount of time to sleep a sensor pair after both get triggered
+const int sensor_sleep_mils = 1000;   // amount of time to sleep a sensor pair after both get triggered
 const unsigned long lights_out_timeout = 60000; // 1min with no activity we reset
 int last_active_group = LOWER;
 ////////////////////////////////////////// Lower floor sensor group
@@ -119,9 +135,9 @@ void set_counter(int count) {
   if(value > 17) value = 17;
   
   for (int i = 0 ; i < 8 ; i++ ) {
-  sr.setNoUpdate(i + 16, Digits[value][i]);
+  sr.set(i + 16, Digits[value][i]);
   }
-  sr.updateRegisters(); // update the pins to the set values
+  
 }
 
 // forward declaration.
@@ -451,10 +467,12 @@ void detect_button()
 {
 
   buttonState = digitalRead(buttonPin);
-  uint8_t pinValues[] = { B11111110, B10111111};      //Turn on 1st and last relay
-  uint8_t pinValues0[] = { B11111111, B11111111};     //Turn off all relay
-  uint8_t pinValues2[] = { B00000000, B00000000};     //Turn on all relay
-  uint8_t pinValues1[] = { B10101010, B10101010};     //Turn on alternative relays  
+  uint8_t pinValues4[] = { B11111110, B10111111, B10100001};      //Turn on 1st and last relay
+  uint8_t pinValues00[] = { B11111111, B11111111, B11000110};     //Turn off all relay
+  uint8_t pinValues2[] = { B00000000, B00000000, B10000011};     //Turn on all relay
+  uint8_t pinValues1[] = { B10101010, B10101010, B10001000};     //Turn on alternative relays  
+  uint8_t pinValues0[] = { B11111111, B11111111, B11000000};     //Turn off all relay with 0
+
       
 
   // compare the buttonState to its previous state
@@ -469,7 +487,7 @@ void detect_button()
       Serial.println(buttonPushCounter);
       if (buttonPushCounter == 4 ) {
         Serial.println("setting count = 0");
-        sr.setAll(pinValues);
+        sr.setAll(pinValues4);
         delay(3000);
         sr.setAll(pinValues0);
        } 
@@ -492,7 +510,7 @@ void detect_button()
      sr.setAll(pinValues2);     
   }
   if (buttonPushCounter == 3) {
-   sr.setAll(pinValues0);
+   sr.setAll(pinValues00);
   }
    if (buttonPushCounter == 4) {
       sensor_control = true;
@@ -502,6 +520,7 @@ void detect_button()
   if (buttonPushCounter > 4)
       {
        buttonPushCounter = 1;
+        set_counter(person); // reset display
       }
-      set_counter(person); // reset display
+     
 }
