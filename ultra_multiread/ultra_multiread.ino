@@ -30,6 +30,17 @@ const int m_count = MEASURE_COUNT ;
 // parameters: <number of shift registers> (data pin, clock pin, latch pin)
 ShiftRegister74HC595<2> sr(14, 16, 15);
 
+// 0 -> 7   = 1st shift register
+// 8 -> 15  = 2nd shift register
+// 16 -> 23 = 3rd shift register (seven segment display)
+
+// 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, Error
+
+// Common Cathode
+//uint8_t Digits[17][8] = { {1, 1, 1, 1, 1, 1, 0, 0}, {0, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 0, 1, 1, 0, 1, 0}, {1, 1, 1, 1, 0, 0, 1, 0}, {0, 1, 1, 0, 0, 1, 1, 0}, {1, 0, 1, 1, 0, 1, 1, 0}, {1, 0, 1, 1, 1, 1, 1, 0}, {1, 1, 1, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1, 1, 0}, {1, 1, 1, 1, 0, 1, 1, 0}, {1, 1, 1, 0, 1, 1, 1, 0}, {0, 0, 1, 1, 1, 1, 1, 0}, {1, 0, 0, 1, 1, 1, 0, 0}, {0, 1, 1, 1, 1, 0, 1, 0}, {1, 0, 0, 1, 1, 1, 1, 0}, {1, 0, 0, 0, 1, 1, 1, 0}, {1, 0, 0, 1, 0, 0, 1, 0} };
+
+// Common Anode
+uint8_t Digits[17][8] = { {0, 0, 0, 0, 0, 0, 1, 1}, {1, 0, 0, 1, 1, 1, 1, 1}, {0, 0, 1, 0, 0, 1, 0, 1}, {0, 0, 0, 0, 1, 1, 0, 1}, {1, 0, 0, 1, 1, 0, 0, 1}, {0, 1, 0, 0, 1, 0, 0, 1}, {0, 1, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 1, 1, 1, 1, 1}, {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 1, 0, 0, 0, 1}, {1, 1, 0, 0, 0, 0, 0, 1}, {0, 1, 1, 0, 0, 0, 1, 1}, {1, 0, 0, 0, 0, 1, 0, 1}, {0, 1, 1, 0, 0, 0, 0, 1}, {0, 1, 1, 1, 0, 0, 0, 1}, {0, 1, 1, 0, 1, 1, 0, 1} };
 
 //#define ANIM_DELAY 4000  // 100 ms between each light turnon 
 //replaced with potVal
@@ -39,9 +50,9 @@ int potPin = A4;
 int potVal = 0; //to control the animations speed with the pot
 
 /// Animation states
-#define UPPER_ON 1
+#define UPPER_ON  1
 #define UPPER_OFF 2
-#define LOWER_ON 3
+#define LOWER_ON  3
 #define LOWER_OFF 4
 #define NONE -1
 #define LOWER 0
@@ -288,6 +299,16 @@ void people_count_upper() {       // function to detect people count at lower se
   }
 }
 
+void set_counter(int count) {
+  int value = count;
+  if(value > 17) value = 17;
+  
+  for (int i = 0 ; i < 8 ; i++ ) {
+  sr.setNoUpdate(i + 16, Digits[value][i]);
+  }
+  sr.updateRegisters(); // update the pins to the set values
+}
+
 void animate_state() {
   potVal  = analogRead(potPin);       // Read the analog value of the potmeter (0-1023)
   
@@ -295,7 +316,8 @@ void animate_state() {
   {
     Serial.print("Person count:  ----------------------> ");
     Serial.println(person);
-
+    set_counter(person);
+    
     if (person == 1 && last_person == 0 )     // NEED a last activity variable to know which sensor group activity came from
     {
       if (last_active_group == LOWER) {
@@ -321,6 +343,7 @@ void animate_state() {
     Serial.println("lights out timeout");
     person = 0;
     sr.setAllLow();
+    set_counter(person); // reset display
   }
 
   if (anim_state == LOWER_ON) {
@@ -469,5 +492,5 @@ void detect_button()
        buttonPushCounter = 1;
       }
 
-
+   set_counter(person); // reset display
 }
