@@ -19,6 +19,7 @@
 #define e_sD 8 //echo pin
 #define t_sD 9 //Trigger pin
 
+
 UltraSonicDistanceSensor sensor_a(t_sA, e_sA);  //
 UltraSonicDistanceSensor sensor_b(t_sB, e_sB);  //
 UltraSonicDistanceSensor sensor_c(t_sC, e_sC);  //
@@ -33,7 +34,7 @@ ShiftRegister74HC595<2> sr(14, 16, 15);
 
 //#define ANIM_DELAY 4000  // 100 ms between each light turnon 
 //replaced with potVal
-#define DISTANCE_THRESHOLD 80 // the distance to trigger the sensor on
+#define DISTANCE_THRESHOLD 60 // the distance to trigger the sensor on
 
 int potPin = A4;
 int potVal = 0; //to control the animations speed with the pot
@@ -46,6 +47,8 @@ int potVal = 0; //to control the animations speed with the pot
 #define NONE -1
 #define LOWER 0
 #define UPPER 1
+
+uint8_t pinValues0[] = { B11111111, B11111111};
 
 int anim_state = NONE;                // state variable for current animation state
 int last_anim_state = -1;             // last state of above
@@ -119,6 +122,9 @@ void setup() {
   pinMode(e_sD, INPUT);
   pinMode (buttonPin, INPUT);
   buttonPushCounter = EEPROM.read(0);
+  if (EEPROM.read(0) == 4){
+      sr.setAll(pinValues0);
+   }
   Serial.print("EEPROM_lastButtonRead: ");
   Serial.println(EEPROM.read(0));
 //  Serial.println(potVal);
@@ -294,7 +300,7 @@ void animate_state() {
   
   if (person != last_person)              // Set the anim state based on people count change.
   {
-    Serial.print("Person count:  ----------------------> ");
+    Serial.print("Person count:------> ");
     Serial.println(person);
 
     if (person == 1 && last_person == 0 )     // NEED a last activity variable to know which sensor group activity came from
@@ -436,7 +442,6 @@ void detect_button()
       Serial.println(buttonPushCounter);
       if (buttonPushCounter == 4 ) {
         Serial.println("setting count = 0");
-        person = 0;
         sr.setAll(pinValues);
         delay(3000);
         sr.setAll(pinValues0);
@@ -452,6 +457,7 @@ void detect_button()
   }
 
   if (buttonPushCounter == 1) {
+     person = 0;
      anim_state = NONE;
     sr.setAll(pinValues1);
   }
@@ -470,6 +476,4 @@ void detect_button()
       {
        buttonPushCounter = 1;
       }
-
-
 }
