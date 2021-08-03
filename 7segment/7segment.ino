@@ -61,7 +61,7 @@ uint8_t Digits[17][8] =
 
 //#define ANIM_DELAY 4000  // 100 ms between each light turnon 
 //replaced with potVal
-#define DISTANCE_THRESHOLD 10 // the distance to trigger the sensor on
+#define DISTANCE_THRESHOLD 60 // the distance to trigger the sensor on
 
 int potPin = A4;
 int potVal = 0; //to control the animations speed with the pot
@@ -85,7 +85,9 @@ unsigned long anim_start = 0;         // millis for when animation has started
 int person = 0, last_person = 0;      // person counter and last person -- used to detect when person count has changed
 int anim_counter = 0;                 // animation counter -- used to keep track of animation progress
 const int sensor_sleep_mils = 1000;   // amount of time to sleep a sensor pair after both get triggered
-const unsigned long lights_out_timeout = 60000; // 1min with no activity we reset
+
+const unsigned long lights_out_timeout = 3600000; // 1hr with no activity we reset
+
 int last_active_group = LOWER;
 ////////////////////////////////////////// Lower floor sensor group
 long dis_a = 1000, dis_b = 1000;        // distance return in cm for each sensor of lower group
@@ -471,7 +473,7 @@ void detect_button()
   uint8_t pinValues00[] = { B11111111, B11111111, B11000110};     //Turn off all relay
   uint8_t pinValues2[] = { B00000000, B00000000, B10000011};     //Turn on all relay
   uint8_t pinValues1[] = { B10101010, B10101010, B10001000};     //Turn on alternative relays  
-  uint8_t pinValues0[] = { B11111111, B11111111, B11000000};     //Turn off all relay with 0
+  //uint8_t pinValues0[] = { B11111111, B11111111, B11000000};     //Turn off all relay with 0
 
       
 
