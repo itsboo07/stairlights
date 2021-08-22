@@ -114,6 +114,7 @@ bool u_sensor_sleep = false;            // boolean to indicated that a sensor pa
 bool u_last_sleep = false;              // boolean to detect a change in sleep status
 unsigned long u_last_flag_change;       // the time when a flag was last changed in upper group
 
+int lastbuttonPushCounter = 0;
 int buttonPushCounter = 0;              // counter for the number of button presses
 int buttonState = 0;                    // current state of the button
 int lastButtonState = 0;                // previous state of the button
@@ -160,7 +161,7 @@ void animate_state();
 void setup() {
   Serial.begin(9600);// initialize serial communication at 9600 bits per second:
   Serial.println("BOO Staircase Started");
-  
+
   pinMode(t_sA, OUTPUT);
   pinMode(e_sA, INPUT);
   pinMode(t_sB, OUTPUT);
@@ -170,6 +171,7 @@ void setup() {
   pinMode(t_sD, OUTPUT);
   pinMode(e_sD, INPUT);
   pinMode (buttonPin, INPUT);
+  
   buttonPushCounter = EEPROM.read(0);
   if (EEPROM.read(0) == 4) {
     sr.setAll(pinValues4);
@@ -486,48 +488,67 @@ void detect_button()
   uint8_t pinValues1[] = { B10101010, B10101010, B10001000};     //Turn on alternative relays
   //uint8_t pinValues0[] = { B11111111, B11111111, B11000000};     //Turn off all relay with 0
 
-  
- 
+
   // compare the buttonState to its previous state
   if (buttonState != lastButtonState  ) {
-    EEPROM.write(0, buttonPushCounter);
+
+    //EEPROM.write(0, buttonPushCounter);
     // if the state has changed, increment the counter
+
     if (buttonState == HIGH) {
       // if the current state is HIGH then the button went from off to on:
       buttonPushCounter++;
       Serial.println("on");
       Serial.print("number of button pushes: ");
       Serial.println(buttonPushCounter);
-      if (buttonPushCounter == 4 ) {
-        Serial.println("setting count = 0");
-        sr.setAll(pinValues4);
-        delay(3000);
-        sr.setAll(pinValues0);
-      }
-      else {
-        sensor_control = false;
-      }
+
+      //      if (buttonPushCounter == 4 ) {
+      //        Serial.println("setting count = 0");
+      //        sr.setAll(pinValues4);
+      //        delay(3000);
+      //        sr.setAll(pinValues0);
+      //      }
+      //      else {
+      //        sensor_control = false;
+      //      }
     }
     lastButtonState = buttonState;
   }
 
- 
+
+ if (buttonPushCounter != lastbuttonPushCounter ) {
+    EEPROM.write(0, buttonPushCounter);
+    Serial.print("number of button pushes: ");
+    Serial.println(buttonPushCounter);
+    if (buttonPushCounter == 4 ) {
+      Serial.println("setting count = 0");
+      sr.setAll(pinValues4);
+      delay(3000);
+      sr.setAll(pinValues0);
+    }
+    else {
+      sensor_control = false;
+    }
+    lastbuttonPushCounter = buttonPushCounter;
+  }
+
+  
   if (buttonPushCounter == 1  ) {
     person = 0;
     anim_state = NONE;
-    Serial.println("fun 1");
+    //Serial.println("fun 1");
     sr.setAll(pinValues1);
   }
   if (buttonPushCounter == 2  ) {
-    Serial.println("fun 2");
+    //Serial.println("fun 2");
     sr.setAll(pinValues2);
   }
   if (buttonPushCounter == 3  ) {
-    Serial.println("fun 3");
+    //Serial.println("fun 3");
     sr.setAll(pinValues00);
   }
   if (buttonPushCounter == 4  ) {
-     Serial.println("fun 4");
+    //Serial.println("fun 4");
     sensor_control = true;
   } else {
     sensor_control = false;
@@ -537,21 +558,22 @@ void detect_button()
     buttonPushCounter = 1;
     set_counter(person); // reset display
   }
-  int esp_command = 0;
+  
+  //int esp_command = 0;
   if (Serial.available()) {
-    esp_command = Serial.read();
-    
-  if (esp_command == '1'){
-    (buttonPushCounter = 1) ;
+  int esp_command = Serial.read();
+
+    if (esp_command == '1') {
+      (buttonPushCounter = 1) ;
+    }
+    if (esp_command == '2') {
+      (buttonPushCounter = 2) ;
+    }
+    if (esp_command == '3') {
+      (buttonPushCounter = 3) ;
+    }
+    if (esp_command == '4') {
+      (buttonPushCounter = 4);
+    }
   }
-  if (esp_command == '2'){
-    (buttonPushCounter = 2) ;
-  }
-  if (esp_command == '3'){
-    (buttonPushCounter =3) ;
-  }
-  if (esp_command == '4'){
-    (buttonPushCounter = 4);
-  }
-}
 }
