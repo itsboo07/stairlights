@@ -489,7 +489,7 @@ void detect_button()
   
  
   // compare the buttonState to its previous state
-  if (buttonState != lastButtonState) {
+  if (buttonState != lastButtonState  ) {
     EEPROM.write(0, buttonPushCounter);
     // if the state has changed, increment the counter
     if (buttonState == HIGH) {
@@ -527,7 +527,7 @@ void detect_button()
     sr.setAll(pinValues00);
   }
   if (buttonPushCounter == 4  ) {
-    //Serial.println("fun 4");
+     Serial.println("fun 4");
     sensor_control = true;
   } else {
     sensor_control = false;
