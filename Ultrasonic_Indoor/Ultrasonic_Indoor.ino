@@ -171,15 +171,15 @@ void setup() {
   pinMode(t_sD, OUTPUT);
   pinMode(e_sD, INPUT);
   pinMode (buttonPin, INPUT);
-  
-  buttonPushCounter = EEPROM.read(0);
-  if (EEPROM.read(0) == 4) {
+  delay(1000);  
+  buttonPushCounter = EEPROM.read(2);
+  if (EEPROM.read(2) == 4) {
     sr.setAll(pinValues4);
     delay(3000);
     sr.setAll(pinValues0);
   }
   Serial.print("EEPROM_lastButtonRead: ");
-  Serial.println(EEPROM.read(0));
+  Serial.println(buttonPushCounter);
   //  Serial.println(potVal);
 
 }
@@ -488,6 +488,25 @@ void detect_button()
   uint8_t pinValues1[] = { B10101010, B10101010, B10001000};     //Turn on alternative relays
   //uint8_t pinValues0[] = { B11111111, B11111111, B11000000};     //Turn off all relay with 0
 
+if (buttonPushCounter != lastbuttonPushCounter ) {
+    Serial.print("writing to eeprom:  ");
+    Serial.println( buttonPushCounter);
+    EEPROM.write(2, buttonPushCounter);
+    Serial.print("number of button pushes: ");
+    Serial.println(buttonPushCounter);
+    
+    if (buttonPushCounter == 4 ) {
+      Serial.println("setting count = 0");
+      sr.setAll(pinValues4);
+      delay(3000);
+      sr.setAll(pinValues0);
+    }
+    else {
+      sensor_control = false;
+    }
+    lastbuttonPushCounter = buttonPushCounter;
+  }
+
 
   // compare the buttonState to its previous state
   if (buttonState != lastButtonState  ) {
@@ -514,24 +533,6 @@ void detect_button()
     }
     lastButtonState = buttonState;
   }
-
-
- if (buttonPushCounter != lastbuttonPushCounter ) {
-    EEPROM.write(0, buttonPushCounter);
-    Serial.print("number of button pushes: ");
-    Serial.println(buttonPushCounter);
-    if (buttonPushCounter == 4 ) {
-      Serial.println("setting count = 0");
-      sr.setAll(pinValues4);
-      delay(3000);
-      sr.setAll(pinValues0);
-    }
-    else {
-      sensor_control = false;
-    }
-    lastbuttonPushCounter = buttonPushCounter;
-  }
-
   
   if (buttonPushCounter == 1  ) {
     person = 0;
@@ -543,6 +544,7 @@ void detect_button()
     //Serial.println("fun 2");
     sr.setAll(pinValues2);
   }
+  
   if (buttonPushCounter == 3  ) {
     //Serial.println("fun 3");
     sr.setAll(pinValues00);
