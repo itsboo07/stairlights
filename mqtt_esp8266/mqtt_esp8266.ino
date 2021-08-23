@@ -17,16 +17,16 @@
   - Open the "Tools -> Board -> Board Manager" and click install for the ESP8266"
   - Select your ESP8266 in "Tools -> Board"
 */
-#include<Softwareabc.h>
-Softwareabc abc(3,1);
+#include<SoftwareSerial.h>
+SoftwareSerial abc(3,1);
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
 // Update these with values suitable for your network.
 
-const char* ssid = "........";
-const char* password = "........";
-const char* mqtt_server = "broker.mqtt-dashboard.com";
+const char* ssid = "kp";
+const char* password = "welcome1234";
+const char* mqtt_server = "192.168.0.108";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -85,7 +85,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
    
 }
 
-}
+
 
 void reconnect() {
   // Loop until we're reconnected
@@ -112,7 +112,7 @@ void reconnect() {
 }
 
 void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+  //pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
   abc.begin(9600);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
